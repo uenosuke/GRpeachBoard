@@ -16,7 +16,7 @@ int AMT203V::spi_write(int msg){
   digitalWrite(CSBpin,LOW);
   msg_temp = pSPI->transfer(msg);
   digitalWrite(CSBpin,HIGH);
-  delayMicroseconds(20);
+  delayMicroseconds(50);
   return(msg_temp);
 }
 
@@ -32,8 +32,6 @@ int AMT203V::init(){
     recieved = spi_write(0x00);
 
     while ( recieved != 0x10 ){
-      //Serial.println(recieved);
-
       recieved = spi_write(0x00);
       recieve_count++;
       // 先生のプログラムでは時間が経っても0x10が返ってこなかったら-1を戻すようにしてある
@@ -73,7 +71,7 @@ int AMT203V::getEncount(){
 
   while( !recieve_done ){
     spi_write(0x10);
-
+    
     recieved = spi_write(0x00);
 
     while ( recieved != 0x10 ){

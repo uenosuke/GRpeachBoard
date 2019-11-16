@@ -17,12 +17,14 @@ phaseCounter enc2(2);
 AMT203V amt203(&SPI, PIN_CSB);
 lpms_me1 lpms(&Serial1);
 
+USBHostSerial USBserial;
+
 void LEDblink(byte pin, int times){
   analogWrite(pin, 0);
   for(int i = 0; i < times; i++){
-    wait(0.25);
+    wait(0.1);
     analogWrite(pin, 255);
-    wait(0.25);
+    wait(0.1);
     analogWrite(pin, 0);
   }
 }
@@ -45,12 +47,12 @@ void timer_warikomi(){
   count += 2; // ここで光る周期を変えられる(はず)
 
   
-  Serial.print("abscount ");
-  Serial.print(amt203.getEncount());
+  /*Serial.print("abscount ");
+  Serial.println(amt203.getEncount());
 
-  Serial.print("lpms ");
-  Serial.println(lpms.get_z_angle());
-  /*Serial.print("encount1 ");
+  Serial.print("\tlpms ");
+  Serial.print(lpms.get_z_angle());
+  Serial.print("\tencount1 ");
   Serial.print(enc1.getCount());
   Serial.print("\tencount2 ");
   Serial.println(enc2.getCount());*/
@@ -92,10 +94,20 @@ void setup()
 
   MsTimer2::set(10, timer_warikomi); // 10ms period
   MsTimer2::start();
+
+  while(!USBserial.connect())
+  wait(0.5);
 }
 
 void loop()
 {
-
+  // if device disconnected, try to connect it again
+  if (USBserial.connected()){
+    // print characters received
+    while (USBserial.available()) {
+      printf("%c", USBserial.getc());
+    }   
+  }
+  wait(0.1);
 }
 

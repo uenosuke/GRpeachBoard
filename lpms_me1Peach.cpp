@@ -320,9 +320,9 @@ int lpms_me1::init(){
   
   do{
     set_offset();
-    Serial.print("set offset sent: ");
+    //Serial.print("set offset sent: ");
     result[3] = recv_proc(500);
-    Serial.println(result[3]);
+    //Serial.println(result[3]);
   }while(result[3] != 0);
 
   for(int i = 0; i < 5; i++){
