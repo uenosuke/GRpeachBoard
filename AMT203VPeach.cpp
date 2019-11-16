@@ -1,4 +1,4 @@
-#include "AMT203V.h"
+#include "AMT203VPeach.h"
 
 AMT203V::AMT203V(SPIClass* xSPI, byte xCSBpin){
   CSBpin = xCSBpin;

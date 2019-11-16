@@ -2,7 +2,7 @@
 #define LPMS_ME1_h
 
 #include <Arduino.h>
-#include "iodefine_gcc63n.h"
+#include "RZ_A1H.h"
 
 class lpms_me1{
     public:

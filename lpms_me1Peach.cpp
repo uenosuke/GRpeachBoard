@@ -1,4 +1,4 @@
-#include "lpms_me1.h"
+#include "lpms_me1Peach.h"
 #include <math.h>
 
 #define PIx2 6.28318530718
@@ -169,14 +169,14 @@ int lpms_me1::recv_proc(int timeout_num = 10){
   
   // 受信処理
   while(!recv_done){
-    if(timeout_counter > timeout_num * 10){
+    if(timeout_counter > timeout_num * 20){
       return -1;
     }
     timeout_counter++;
     
     if (serial->available() > 0) {
       byte data = serial->read();
-      
+
       switch (state) {
       case 0:
         if (data == 0x3A) state++;
@@ -267,15 +267,36 @@ int lpms_me1::init(){
   int datanum, result[4] = {0};
 
   // ここは Serial1 をジャイロセンサに使うことを前提に書かれている
-  PORT2.PDR.BIT.B3 = 0;
-  SCI0.SPMR.BIT.CTSE = 1; // CTS#0 を利用
+  // P2_3 を CTSピンとして使うための設定
+  /***** ポートの初期化 *****/
+  GPIO.PIBC2 &= ~0x0008; // ポート入力バッファ制御レジスタ 入力バッファ禁止
+	GPIO.PBDC2 &= ~0x0008; // ポート双方向制御レジスタ 双方向モードを禁止
+	GPIO.PM2 &= ~0x0008; // ポートモードレジスタ 入力モード
+	GPIO.PMC2 &= ~0x0008; // ポートモード制御レジスタ ポートモード
+	GPIO.PIPC2 &= ~0x0008; // ポート IP 制御レジスタ　入出力はPMn.PMnmビットによって制御されます
+		
+	/***** 入力機能のポート設定 *****/
+	GPIO.PBDC2 |= 0x0008; // ポート双方向制御レジスタ 双方向モードを許可
+		
+	/***** ポート設定 *****/
+	GPIO.PFC2 |= 0x0008;
+	GPIO.PFCE2 &= ~0x0008;
+	GPIO.PFCAE2 |= 0x0008;
+
+	GPIO.PIPC2 |= 0x0008; // ポート IP 制御レジスタ　入出力はPMn.PMnmビットによって制御されます
+	GPIO.PMC2 |= 0x0008; // ポートモード制御レジスタ ポートモード
+
+  // CTSピンを使うための設定
+  CPG.STBCR4 &= ~0x40; // FIFO内臓シリアルコミュニケーションインタフェースチャンネル1は動作(これをやらないと以下が書き変わらない)
+  SCIF1.SCFCR |= 0x08; // CTS#1 を利用
 
   serial->begin(115200);
+
   datanum = serial->available();
   for(int i = 0; i < datanum; i++){
-    trash = serial->read();
+    trash = serial->read(); // ゴミデータを捨てる
   }
-
+  
   do{
     goto_command_mode();
     //Serial.print("goto command mode sent: ");
@@ -296,11 +317,12 @@ int lpms_me1::init(){
   //Serial.println(result[2]);
 
   delay(10); // これがないと，データが正常に取れなくなる
+  
   do{
     set_offset();
-    //Serial.print("set offset sent: ");
+    Serial.print("set offset sent: ");
     result[3] = recv_proc(500);
-    //Serial.println(result[3]);
+    Serial.println(result[3]);
   }while(result[3] != 0);
 
   for(int i = 0; i < 5; i++){
@@ -311,6 +333,6 @@ int lpms_me1::init(){
 
   //if(result[0] >= 0 && result[1] >= 0) digitalWrite(PIN_LED3, HIGH);
   //if(result[2] >= 0 && result[3] >= 0) digitalWrite(PIN_LED2, HIGH);
-
-  return (result[0] + result[1] + result[3]);
+  if((result[0] + result[1] + result[3]) == 0) return 1;
+  else return (result[0] + result[1] + result[3]);
 }
