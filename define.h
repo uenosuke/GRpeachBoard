@@ -1,0 +1,100 @@
+#ifndef DEFINE_h
+#define DEFINE_h
+
+#include "Arduino.h"
+
+#define PIN_DIP1 25
+#define PIN_DIP2 24
+#define PIN_DIP3 69
+#define PIN_DIP4 70
+
+#define PIN_SW_UP    32
+#define PIN_SW_LEFT  33
+#define PIN_SW_RIGHT 31
+#define PIN_SW_DOWN  30
+
+#define PIN_SW_WHITE  29
+#define PIN_SW_YELLOW 28
+
+#define PIN_ENC_A  26
+#define PIN_ENC_B  27
+
+#define PIN_LED_1 20
+#define PIN_LED_2 36
+#define PIN_LED_3 37
+#define PIN_LED_4 38
+#define PIN_LED_ENC 53
+
+#define PIN_CTRL    ( A1 )
+//#define PIN_XY      (  )
+
+// 制御周期
+#define INT_TIME			( 0.01 )//( 0.001 )
+
+// フェーズ管理
+//#define STATE1      ( 10 )// スタートからゲルゲ受け渡しまで(0から数えて)
+#define STATE1_1    ( 7 )// ベジエTANGENTモード
+#define STATE1_2    ( 8 )// ベジエCOMMANDモード
+#define STATE1_3    ( 9 )// ベジエCOMMANDモード(フェーズの変更は収束判定ではなくリミットスイッチで)
+#define STATE1_4    ( 10 )// 使うか分からないけど
+#define STATE2      ( 14 )// ゲルゲ受け渡し後からシャガイ取得まで
+#define STATE3      ( 15 )// シャガイ取得後からスローイングゾーン待機まで
+#define STATE4      ( 17 )// 投擲位置まで移動
+#define STATE5      ( 20 )//( 19 )// 2個目のシャガイまで
+#define STATE6      ( 22 )//( 21 )// シャガイ取得後からスローイングゾーン待機まで
+#define STATE7      ( 25 )//( 23 )// 3個目のシャガイまで
+#define STATE8      ( 27 )//( 25 )// シャガイ取得後からスローイングゾーン待機まで
+
+#define STATE_ALL   ( STATE1 + STATE2 + STATE3 + STATE4 )
+
+// 上半身との通信
+// #define BIT_START   ( 0b10010000 ) // 0x90:最初に送る
+#define BIT_RED     ( 0b11010000 )// 赤の初期化
+#define BIT_BLUE    ( 0b10010000 )// 青の初期化
+#define BIT_INIT    ( 0b10001000 )// 
+#define BIT_DOWN    ( 0b10001001 )// シャガイを取るモード
+#define BIT_ROT     ( 0b10001101 )// ローラ回転
+#define BIT_DEP     ( 0b10100000 )// ゲルゲ展開
+#define BIT_STOR    ( 0b10000001 )// ゲルゲ格納
+#define BIT_EXT     ( 0b10001110 )// シャガイを投げる
+#define BIT_0       ( 0b00000000 )
+
+#define MASK_SHAGAIARM  ( 0b00010000 )// シャガイハンド上下のマスク
+
+// VL53L0X
+#define SENSOR_NUM  4 // 使用するセンサーの数
+#define ADDRESS_DEFALUT 0b0101001 // 0x29
+#define ADDRESS_00 (ADDRESS_DEFALUT + 2)
+
+// 自己位置推定用エンコーダ関連
+#define _2PI_RES4   ( 2 * 3.141592 / 800 ) // res = 200
+#define RADIUS_X    ( 0.024 )
+#define RADIUS_Y    ( 0.024 )
+
+// メカナム関連
+//#define MECANUM_RES			( 500 )
+//#define MECANUM_HANKEI		( 0.05 )
+//#define MECANUM_HANKEI_D	( 0.15561 )
+//#define MECANUM_HANKEI_L	( 0.26023 )
+
+// 双輪キャスター関連
+#define PIN_CSB     ( 23 )    // turntableのPIN(CSB)
+#define RADIUS_R    ( 0.04 )    // wheel radius
+#define RADIUS_L    ( 0.04 )    // wheel radius
+#define W           ( 0.265 )    // tread
+#define GEARRATIO   ( 5.5 )
+#define TT_RES4     ( 4096 )    // turntableの分解能
+#define _2RES_PI    ( 2 * 2048 / 3.141592 )  
+#define _2RES_PI_T  ( 2 * 500 / 3.141592 )
+
+// RoboClaw関連
+#define ADR_MD1             ( 128 )
+#define ADR_MD2             ( 129 )
+
+//const double _2PI_MEASRMX = 2.0 * PI / MEASURE_RES_MUL_X;
+//const double _2PI_MEASRMY = 2.0 * PI / MEASURE_RES_MUL_Y;
+//const double _0P5_MEASHD = 0.5 / MEASURE_HANKEI_D;
+//const double _MECAHD_ADD_MECAHL = MECANUM_HANKEI_D + MECANUM_HANKEI_L;
+//const double _2MECAR_PI = 2.0 * MECANUM_RES / PI;
+
+#endif
