@@ -14,6 +14,7 @@ AMT203V::AMT203V(SPIClass* xSPI, byte xCSBpin){
 int AMT203V::spi_write(int msg){
   int msg_temp = 0;
   digitalWrite(CSBpin,LOW);
+  delayMicroseconds(50);
   msg_temp = pSPI->transfer(msg);
   digitalWrite(CSBpin,HIGH);
   delayMicroseconds(50);
@@ -25,6 +26,8 @@ int AMT203V::init(){
   int recieve_count = 0;
   int error_count = 0;
   boolean recieve_done = false;
+
+  delay(100);
 
   while( !recieve_done ){
     spi_write(0x10);
@@ -82,7 +85,7 @@ int AMT203V::getEncount(){
       if( recieve_count >= 10 ){
         error_count++;
 
-        if( error_count == 5 ) return -1;
+        if( error_count == 10 ) return -1;
         break;
       }
     }

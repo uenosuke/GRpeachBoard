@@ -3,6 +3,7 @@
 
 #include "Arduino.h"
 
+// スイッチやLEDのピン設定
 #define PIN_DIP1 25
 #define PIN_DIP2 24
 #define PIN_DIP3 69
@@ -23,9 +24,30 @@
 #define PIN_LED_2 36
 #define PIN_LED_3 37
 #define PIN_LED_4 38
-#define PIN_LED_ENC 53
+#define PIN_LED_ENC 40
 
-#define PIN_CTRL    ( A1 )
+// Lernardo からのコントローラ用データのマスクデータ
+#define BUTTON_X  0x0001
+#define BUTTON_Y  0x0002
+#define BUTTON_A  0x0004
+#define BUTTON_B  0x0008
+
+#define BUTTON_L1     0x0010
+#define BUTTON_R1     0x0020
+#define BUTTON_L2     0x0040
+#define BUTTON_R2     0x0080
+
+#define BUTTON_JOY_L   0x0100
+#define BUTTON_JOY_R   0x0200
+#define BUTTON_BACK    0x0400
+#define BUTTON_START   0x0800
+
+#define BUTTON_UP     0x1000
+#define BUTTON_RIGHT  0x2000
+#define BUTTON_DOWN   0x4000
+#define BUTTON_LEFT   0x8000
+
+//#define PIN_CTRL    ( A1 )
 //#define PIN_XY      (  )
 
 // 制御周期
@@ -78,7 +100,7 @@
 //#define MECANUM_HANKEI_L	( 0.26023 )
 
 // 双輪キャスター関連
-#define PIN_CSB     ( 23 )    // turntableのPIN(CSB)
+//#define PIN_CSB     ( 23 )    // turntableのPIN(CSB)
 #define RADIUS_R    ( 0.04 )    // wheel radius
 #define RADIUS_L    ( 0.04 )    // wheel radius
 #define W           ( 0.265 )    // tread
