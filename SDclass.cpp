@@ -15,10 +15,12 @@ int mySDclass::init(){
   if (SD.begin()) {
     SD_enable = true;
     Serial.println("return 0");
+    Serial.flush();
     return 0;
   }
 
-  Serial.println("return 1");
+  Serial.println("return -1");
+  Serial.flush();
   return -1;
 }
 
@@ -131,6 +133,8 @@ int mySDclass::path_read(int field, double Px[], double Py[], double vel[], doub
     file_end = false;
     //   the file:
      myFile.close();
+
+     Serial.flush();
   } else {
   	// if the file didn't open, print an error:
     //Serial.println("error opening test.txt");
@@ -210,6 +214,8 @@ int mySDclass::path_read(int field, double Px[], double Py[], double vel[], doub
     //Serial.println("vel/angle done!");
     // close the file:
      myFile.close();
+
+     Serial.flush();
   } else {
   	// if the file didn't open, print an error:
     //Serial.println("error opening test.txt");

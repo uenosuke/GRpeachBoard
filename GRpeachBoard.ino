@@ -45,6 +45,7 @@ Button dip4(PIN_DIP4);
 // グローバル変数の設定
 double gPosix = 0.0, gPosiy = 0.0, gPosiz = 0.0;
 double angle_rad;
+int zone = RED;
 bool flag_100ms = false;
 
 // イベントキューを作成する
@@ -80,7 +81,7 @@ void timer_warikomi(){
     count = 0;
   }
 
-  if(count_flag >= 10){
+  if(count_flag >= 1){
     flag_100ms = true;
     count_flag = 0;
   }
@@ -161,11 +162,15 @@ void setup()
   myLCD.clear_display(); // LCDをクリア
 
   SPI.begin(); // ここでSPIをbeginしてあげないとちゃんと動かなかった
-  //if(amt203.init() != 1) error_stop();
+  // if(amt203.init() != 1) error_stop();
   LEDblink(PIN_LED_GREEN, 2, 100); // 初期が終わった証拠にブリンク
+  Serial.println("AMT203V init done!");
+  Serial.flush();
   
   if(lpms.init() != 1) error_stop();
   LEDblink(PIN_LED_BLUE, 2, 100);  // 初期が終わった証拠にブリンク
+  Serial.println("LPMS-ME1 init done!");
+  Serial.flush();
   
   // LCDに状態などを表示
   myLCD.write_line("Sensors Initialized", LINE_1);
@@ -182,7 +187,7 @@ void setup()
 
   myLCD.write_line(lcd_message, LINE_2);
 
-  delay(750); // これ入れないと，次が表示されない
+  //delay(750); // これ入れないと，次が表示されない
 
   // 選択メニューを表示
   myLCD.write_line(" Path Read", LINE_3);
@@ -264,23 +269,27 @@ void setup()
       if(dip2.get_button_state()) myLCD.write_str("AUTO", LINE_2, 15);
       else myLCD.write_str("MANU", LINE_2, 15);
     }
-    delay(50); // これが無いと，タクトスイッチの立ち上がり，下がりがうまく取れない
+    //delay(50); // これが無いと，タクトスイッチの立ち上がり，下がりがうまく取れない
   }
   myLCD.clear_display(); // LCDをクリア
+
+  if(dip1.get_button_state()) zone = RED;
+  else zone = BLUE;
 
   // SDのカードの処理をここに入れる
   mySD.init();
   delay(10);
   //Serial.println("Path reading ...");
-  int actpathnum = mySD.path_read(RED, motion.Px, motion.Py, motion.refvel, motion.refangle, motion.acc_mode, motion.acc_count, motion.dec_tbe);
-  //Serial.print("actpathnum: ");
-  //Serial.println(actpathnum);
+  int actpathnum = mySD.path_read(zone, motion.Px, motion.Py, motion.refvel, motion.refangle, motion.acc_mode, motion.acc_count, motion.dec_tbe);
+  Serial.print("actpathnum: ");
+  Serial.println(actpathnum);
+
   //Serial.println("Normal Start at RED zone");
   myLCD.write_line("### SD-card Read ###", LINE_1);
   lcd_message = "PathNum:";
   lcd_message += String(actpathnum);
   lcd_message += " ZONE:";
-  if(dip1.get_button_state()) lcd_message += "RED";
+  if(zone == RED) lcd_message += "RED";
   else lcd_message += "BLU";
   myLCD.write_line(lcd_message, LINE_2);
   myLCD.color_red();
@@ -407,38 +416,41 @@ void loop()
  }
 
 if(flag_100ms){
- //Serial.print("\tlpms ");
- //Serial.print(lpms.get_z_angle());
-  myLCD.write_double(lpms.get_z_angle(), LINE_3, 6);
- /*Serial.print("abscount ");
- Serial.print(amt203.getEncount());
- Serial.print("\tencount1 ");
- Serial.print(enc1.getCount());
- Serial.print("\tencount2 ");
- Serial.println(enc2.getCount());*/
- flag_100ms = false;
-}
- 
+  Serial.print("\tlpms ");
+  Serial.print(lpms.get_z_angle());
+    myLCD.write_double(lpms.get_z_angle(), LINE_3, 6);
+  //Serial.print("abscount ");
+  //Serial.print(amt203.getEncount());
+  Serial.print("\tencount1 ");
+  Serial.print(enc1.getCount());
+  Serial.print("\tencount2 ");
+  Serial.println(enc2.getCount());
+  flag_100ms = false;
 
- /*digitalWrite(TESTPIN1, 1);
- digitalWrite(TESTPIN2, 1);
- digitalWrite(TESTPIN3, 1);
- digitalWrite(TESTPIN4, 1);
- digitalWrite(TESTPIN5, 1);
- digitalWrite(TESTPIN6, 1);
- digitalWrite(TESTPIN7, 1);
- digitalWrite(TESTPIN8, 1);
- digitalWrite(TESTPIN9, 1);
- delay(1000);
- digitalWrite(TESTPIN1, 0);
- digitalWrite(TESTPIN2, 0);
- digitalWrite(TESTPIN3, 0);
- digitalWrite(TESTPIN4, 0);
- digitalWrite(TESTPIN5, 0);
- digitalWrite(TESTPIN6, 0);
- digitalWrite(TESTPIN7, 0);
- digitalWrite(TESTPIN8, 0);
- digitalWrite(TESTPIN9, 0);
- delay(1000);*/
+  Serial.print("Pins: ");
+  Serial.print(digitalRead(PIN_DIP1));
+  Serial.print(" ");
+  Serial.print(digitalRead(PIN_DIP2));
+  Serial.print(" ");
+  Serial.print(digitalRead(PIN_DIP3));
+  Serial.print(" ");
+  Serial.print(digitalRead(PIN_DIP4));
+  Serial.print(" ");
+  Serial.print(digitalRead(PIN_SW_UP));
+  Serial.print(" ");
+  Serial.print(digitalRead(PIN_SW_LEFT));
+  Serial.print(" ");
+  Serial.print(digitalRead(PIN_SW_RIGHT));
+  Serial.print(" ");
+  Serial.print(digitalRead(PIN_SW_DOWN));
+  Serial.print(" ");
+  Serial.print(digitalRead(PIN_SW_WHITE));
+  Serial.print(" ");
+  Serial.print(digitalRead(PIN_SW_YELLOW));
+
+  Serial.flush();
+
+ }
+ //delayMicroseconds(100);
 }
 
