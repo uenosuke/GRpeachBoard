@@ -51,6 +51,7 @@ Button dip4(PIN_DIP4);
 
 // グローバル変数の設定
 double gPosix = 0.0, gPosiy = 0.0, gPosiz = 0.0;
+double refVx, refVy, refVz;
 double angle_rad;
 int encX = 0, encY = 0; // X,Y軸エンコーダのカウント値
 int preEncX = 0, preEncY = 0; // X,Y軸エンコーダの"1サンプル前の"カウント値
@@ -268,7 +269,6 @@ void setup()
   delay(750); 
 
   myLCD.write_line("Angle:", LINE_3);
-  myLCD.write_line("PathN:    Phase:", LINE_4);
 
   myLCD.write_double(gPosix, LINE_2, 3);
   myLCD.write_double(gPosiy, LINE_2, 12);
@@ -313,20 +313,20 @@ void loop()
     double cosDu, sinDu, thetaDuEnc, preThetaDuEnc, thetaDu;
 
     // ジョイスティックから指令速度を計算する
-    if(abs(LJoyX - 127) >= JOY_DEADBAND){
-      refVx = (LJoyX - 127) * JOY_MAXVEL;
+    if(abs((int)LJoyX - 127) >= JOY_DEADBAND){
+      refVx = ((int)LJoyX - 127) * JOY_MAXVEL;
     }else{
       refVx = 0.0;
     }
 
-    if(abs(LJoyY - 127) >= JOY_DEADBAND){
-      refVy = (LJoyY - 127) * JOY_MAXVEL;
+    if(abs((int)LJoyY - 127) >= JOY_DEADBAND){
+      refVy = ((int)LJoyY - 127) * JOY_MAXVEL;
     }else{
       refVy = 0.0;
     }
 
-    if(abs(RJoyY - 127) >= JOY_DEADBAND){
-      refVz = (RJoyY - 127) * JOY_MAXANGVEL;
+    if(abs((int)RJoyY - 127) >= JOY_DEADBAND){
+      refVz = ((int)RJoyY - 127) * JOY_MAXANGVEL;
     }else{
       refVz = 0.0;
     }
@@ -414,8 +414,6 @@ void loop()
     myLCD.write_double(gPosix, LINE_2, 3);
     myLCD.write_double(gPosiy, LINE_2, 12);
     myLCD.write_double(gPosiz, LINE_3, 6);
-    myLCD.write_int(pathNum, LINE_4, 6);
-    myLCD.write_int(phase, LINE_4, 16);
     
     flag_100ms = false;
   }
