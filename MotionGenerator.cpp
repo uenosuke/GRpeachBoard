@@ -12,8 +12,8 @@ PID posiPIDx(2.5, 0.0, 5.0, INT_TIME);
 PID posiPIDy(3.0, 0.0, 2.0, INT_TIME);
 PID posiPIDz(4.0, 0.0, 0.0, INT_TIME);
 
-PID yokozurePID(0.0, 0.0, 0.0, INT_TIME);//(3.0, 0.0, 0.0, INT_TIME);
-PID kakudoPID(0.0, 0.0, 0.0, INT_TIME);
+PID yokozurePID(3.0, 0.0, 1.5, INT_TIME);//(3.0, 0.0, 0.0, INT_TIME);
+PID kakudoPID(5.0, 2.5, 0.0, INT_TIME);
 
 // 二次遅れ使えるようになる
 Filter sokduo_filter(INT_TIME);
@@ -183,7 +183,11 @@ int MotionGenerator::calcRefvel(double Posix, double Posiy, double Posiz){
                     refVrot = kakudoPID.getCmd(refKakudo, Posiz, 1.57);
                 }
 
+                per = refVper;
+                rot = refVrot;
                 // ローカル座標系の指令速度(グローバル座標系のも込み込み)
+                //refVxとrefVyをコメントアウトするとkakudoPIDのパラメータ調整が出来る(手で押してみて…)
+                //refVperだけにするとyokozurePIDのパラメータ調整できる
                 refVx =  refVtan * cos( Posiz - angle ) + refVper * sin( Posiz - angle );
                 refVy = -refVtan * sin( Posiz - angle ) + refVper * cos( Posiz - angle );
                 refVz =  refVrot;//0.628319;だと10秒で旋回？
@@ -309,4 +313,12 @@ void MotionGenerator::kakudoPIDinit(double Posiz){
 
 void MotionGenerator::setRefKakudo(){
     refKakudo = refangle[path_num];
+}
+
+double MotionGenerator::getRefVper(){
+    return per;
+}
+
+double MotionGenerator::getRefVrot(){
+    return rot;
 }

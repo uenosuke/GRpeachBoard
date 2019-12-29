@@ -56,6 +56,7 @@ public:
 
     double refVx, refVy, refVz;
     double refKakudo;
+    double tmpPx, tmpPy;
 
     /*********** 関数宣言 ***********/
     MotionGenerator(int xmode);
@@ -92,6 +93,9 @@ public:
     void kakudoPIDinit(double Posiz);
     void setRefKakudo();
 
+    double getRefVper();
+    double getRefVrot();
+
 private:
     int path_num;
     int mode;
@@ -102,6 +106,8 @@ private:
 
     bool mode_changed;
     bool init_done;
+
+    double tan, per, rot;
 };
 
 #endif

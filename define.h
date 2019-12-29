@@ -47,6 +47,10 @@
 #define BUTTON_DOWN   0x4000
 #define BUTTON_LEFT   0x8000
 
+#define JOY_DEADBAND    ( 5 )
+#define JOY_MAXVEL      ( 1.0 )
+#define JOY_MAXANGVEL   ( 2.5 )
+
 //#define PIN_CTRL    ( A1 )
 //#define PIN_XY      (  )
 
@@ -100,7 +104,7 @@
 //#define MECANUM_HANKEI_L	( 0.26023 )
 
 // 双輪キャスター関連
-//#define PIN_CSB     ( 23 )    // turntableのPIN(CSB)
+#define PIN_CSB     ( 10 )    // turntableのPIN(CSB)
 #define RADIUS_R    ( 0.04 )    // wheel radius
 #define RADIUS_L    ( 0.04 )    // wheel radius
 #define W           ( 0.265 )    // tread
