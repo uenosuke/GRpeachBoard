@@ -3,7 +3,7 @@
 // 作成：2019/05/15 by Yuki Ueno
 //-----------------------------------------
 
-#include "MotionGenerator.h"
+#include "PathTracking.h"
 #include "PIDclass.h"
 #include "Filter.h"
 #include "define.h"
@@ -20,7 +20,7 @@ Filter sokduo_filter(INT_TIME);
 Filter kakudo_filter(INT_TIME);
 
 // コンストラクタ
-MotionGenerator::MotionGenerator(int xmode){
+PathTracking::PathTracking(int xmode){
     path_num = 0;
     max_pathnum = 0;
     t_be = 0.0;
@@ -50,38 +50,38 @@ MotionGenerator::MotionGenerator(int xmode){
 }
 
 // tを求めるための方程式
-double MotionGenerator::func(int p, double t)
+double PathTracking::func(int p, double t)
 {
     return a_be[p] * pow(t, 5.0) + b_be[p] * pow(t,4.0) + c_be[p] * pow(t,3.0) + d_be[p] * pow(t,2.0) + e_be[p] * t + f_be[p];
 }
 // tを求めるための方程式の1階微分
-double MotionGenerator::dfunc(int p, double t)
+double PathTracking::dfunc(int p, double t)
 {
     return 5.0 * a_be[p] * pow(t, 4.0) +  4.0 * b_be[p] * pow(t,3.0) + 3.0 * c_be[p] * pow(t,2.0) + 2.0 * d_be[p] * t + e_be[p];
 }
 
 // tにおけるベジエ曲線の座標を求める関数
-double MotionGenerator::bezier_x(int p, double t)
+double PathTracking::bezier_x(int p, double t)
 {
     return Ax[p]*pow(t,3.0) + 3.0*Bx[p]*pow(t,2.0) + 3.0*Cx[p]*t + Dx[p];
 }
-double MotionGenerator::bezier_y(int p, double t)
+double PathTracking::bezier_y(int p, double t)
 {
     return Ay[p]*pow(t,3.0) + 3.0*By[p]*pow(t,2.0) + 3.0*Cy[p]*t + Dy[p];
 }
 
 // ベジエ曲線式の1階微分
-double MotionGenerator::dbezier_x(int p, double t)
+double PathTracking::dbezier_x(int p, double t)
 {
     return 3.0*Ax[p]*pow(t,2.0) + 6.0*Bx[p]*t + 3.0*Cx[p];
 }
-double MotionGenerator::dbezier_y(int p, double t)
+double PathTracking::dbezier_y(int p, double t)
 {
     return 3.0*Ay[p]*pow(t,2.0) + 6.0*By[p]*t + 3.0*Cy[p];
 }
 
 // ニュートン法のための係数の初期化
-void MotionGenerator::initSettings(){
+void PathTracking::initSettings(){
     for(int i = 0; i < PATHNUM; i++) {
         Ax[i] = Px[3*i+3] -3*Px[3*i+2] + 3*Px[3*i+1] - Px[3*i+0];
         Ay[i] = Py[3*i+3] -3*Py[3*i+2] + 3*Py[3*i+1] - Py[3*i+0];
@@ -105,7 +105,7 @@ void MotionGenerator::initSettings(){
 }
 
 // ベジエ曲線までの垂線距離をニュートン法で求めて，そこまでの距離と接線角度を計算する
-void MotionGenerator::calcRefpoint(double Posix, double Posiy){
+void PathTracking::calcRefpoint(double Posix, double Posiy){
     if(init_done){
         double tmpx = Px[path_num * 3] - Posix;
         double tmpy = Py[path_num * 3] - Posiy;
@@ -141,7 +141,7 @@ void MotionGenerator::calcRefpoint(double Posix, double Posiy){
 }
 
 // モードによって，それぞれ指令速度を計算する
-int MotionGenerator::calcRefvel(double Posix, double Posiy, double Posiz){
+int PathTracking::calcRefvel(double Posix, double Posiy, double Posiz){
     double refVxg, refVyg, refVzg; // グローバル座標系の指定速度
     double tmpPx, tmpPy;
     static int counter = 0;
@@ -254,72 +254,72 @@ int MotionGenerator::calcRefvel(double Posix, double Posiy, double Posiz){
 }
 
 // ベジエ曲線のパス番号をインクリメントする
-void MotionGenerator::incrPathnum(double xconv_length, double xconv_tnum = 0.997){
+void PathTracking::incrPathnum(double xconv_length, double xconv_tnum = 0.997){
     path_num++;
     pre_t_be = 0.1;
     setConvPara(xconv_length, xconv_tnum);
 }
 
-int MotionGenerator::getPathNum(){
+int PathTracking::getPathNum(){
     return path_num;
 }
 
-void MotionGenerator::setPathNum(int num){
+void PathTracking::setPathNum(int num){
     path_num = num;
 }
 
 // 収束判定に用いる距離などをセットする
-void MotionGenerator::setConvPara(double xconv_length, double xconv_tnum = 0.997){
+void PathTracking::setConvPara(double xconv_length, double xconv_tnum = 0.997){
     conv_length = xconv_length;
     conv_tnum = xconv_tnum;
 }
 
-void MotionGenerator::setMode(int xmode){
+void PathTracking::setMode(int xmode){
     mode = xmode;
     mode_changed = true;
 }
 
-int MotionGenerator::getMode(){
+int PathTracking::getMode(){
     return mode;
 }
 
-void MotionGenerator::setMaxPathnum(int num){
+void PathTracking::setMaxPathnum(int num){
     max_pathnum = num;
 }
 
-void MotionGenerator::setPosiPIDxPara(float xKp, float xKi, float xKd){
+void PathTracking::setPosiPIDxPara(float xKp, float xKi, float xKd){
     posiPIDx.setPara(xKp, xKi, xKd);
 }
 
-void MotionGenerator::setPosiPIDyPara(float xKp, float xKi, float xKd){
+void PathTracking::setPosiPIDyPara(float xKp, float xKi, float xKd){
     posiPIDy.setPara(xKp, xKi, xKd);
 }
 
-void MotionGenerator::setPosiPIDzPara(float xKp, float xKi, float xKd){
+void PathTracking::setPosiPIDzPara(float xKp, float xKi, float xKd){
     posiPIDz.setPara(xKp, xKi, xKd);
 }
 
-void MotionGenerator::setYokozurePIDPara(float xKp, float xKi, float xKd){
+void PathTracking::setYokozurePIDPara(float xKp, float xKi, float xKd){
     yokozurePID.setPara(xKp, xKi, xKd);
 }
 
-void MotionGenerator::setKakudoPIDPara(float xKp, float xKi, float xKd){
+void PathTracking::setKakudoPIDPara(float xKp, float xKi, float xKd){
     kakudoPID.setPara(xKp, xKi, xKd);
 }
 
 
-void MotionGenerator::kakudoPIDinit(double Posiz){
+void PathTracking::kakudoPIDinit(double Posiz){
     kakudoPID.PIDinit(refKakudo, Posiz);
 }
 
-void MotionGenerator::setRefKakudo(){
+void PathTracking::setRefKakudo(){
     refKakudo = refangle[path_num];
 }
 
-double MotionGenerator::getRefVper(){
+double PathTracking::getRefVper(){
     return per;
 }
 
-double MotionGenerator::getRefVrot(){
+double PathTracking::getRefVrot(){
     return rot;
 }
