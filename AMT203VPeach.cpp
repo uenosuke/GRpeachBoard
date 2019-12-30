@@ -85,7 +85,7 @@ int AMT203V::getEncount(){
       if( recieve_count >= 10 ){
         error_count++;
 
-        if( error_count == 10 ) return -1;
+        if( error_count == 10 ) return preABSposition;
         break;
       }
     }
