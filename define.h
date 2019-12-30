@@ -3,6 +3,12 @@
 
 #include "Arduino.h"
 
+struct coords{
+    double x;
+    double y;
+    double z;
+};
+
 // スイッチやLEDのピン設定
 #define PIN_DIP1 25
 #define PIN_DIP2 24
@@ -46,10 +52,6 @@
 #define BUTTON_RIGHT  0x2000
 #define BUTTON_DOWN   0x4000
 #define BUTTON_LEFT   0x8000
-
-#define JOY_DEADBAND    ( 5 )
-#define JOY_MAXVEL      ( 1.0 )
-#define JOY_MAXANGVEL   ( 2.5 )
 
 //#define PIN_CTRL    ( A1 )
 //#define PIN_XY      (  )
@@ -97,21 +99,37 @@
 #define RADIUS_X    ( 0.024 )
 #define RADIUS_Y    ( 0.024 )
 
-// メカナム関連
-//#define MECANUM_RES			( 500 )
-//#define MECANUM_HANKEI		( 0.05 )
-//#define MECANUM_HANKEI_D	( 0.15561 )
-//#define MECANUM_HANKEI_L	( 0.26023 )
+#define DRIVE_MECHANUM      ( 0 )
+#define DRIVE_OMNI4WHEEL    ( 1 )
+#define DRIVE_OMNI3WHEEL    ( 2 )
+#define DRIVE_DUALWHEEL     ( 3 )
 
-// 双輪キャスター関連
-#define PIN_CSB     ( 10 )    // turntableのPIN(CSB)
-#define RADIUS_R    ( 0.04 )    // wheel radius
-#define RADIUS_L    ( 0.04 )    // wheel radius
-#define W           ( 0.265 )    // tread
-#define GEARRATIO   ( 5.5 )
-#define TT_RES4     ( 4096 )    // turntableの分解能
-#define _2RES_PI    ( 2 * 2048 / 3.141592 )  
-#define _2RES_PI_T  ( 2 * 500 / 3.141592 )
+#define DRIVE_MODE  ( DRIVE_OMNI3WHEEL )
+
+#if DRIVE_MODE == DRIVE_DUALWHEEL
+    // 双輪キャスター関連
+    #define PIN_CSB     ( 10 )    // turntableのPIN(CSB)
+    #define RADIUS_R    ( 0.04 )    // wheel radius
+    #define RADIUS_L    ( 0.04 )    // wheel radius
+    #define W           ( 0.265 )    // tread
+    #define GEARRATIO   ( 5.5 )
+    #define TT_RES4     ( 4096 )    // turntableの分解能
+    #define _2RES_PI    ( 2 * 2048 / 3.141592 ) // 駆動輪の角速度[rad/s]からRoboClawの指令値[pulses/s]に変換するための定数  
+    #define _2RES_PI_T  ( 2 * 500 / 3.141592 ) //  ターンテーブルの角速度[rad/s]からRoboClawの指令値[pulses/s]に変換するための定数
+#elif DRIVE_MODE == DRIVE_MECHANUM
+    // メカナム関連
+    #define MECANUM_RES			( 500 )
+    #define MECANUM_HANKEI		( 0.05 )
+    #define MECANUM_HANKEI_D	( 0.15561 )
+    #define MECANUM_HANKEI_L	( 0.26023 )
+#elif DRIVE_MODE == DRIVE_OMNI3WHEEL
+    #define _2RES_PI    ( 2 * 3 / 3.141592 ) // 駆動輪の角速度[rad/s]からRoboClawの指令値[pulses/s]に変換するための定数  
+    #define WHEEL_R		( 0.019 )
+    #define DIST2WHEEL  ( 0.120 )
+    #define GEARRATIO   ( 51.45 )
+    #define COS_PI_6    ( 0.86602540378 )
+    #define SIN_PI_6    ( 0.5 )
+#endif
 
 // RoboClaw関連
 #define ADR_MD1             ( 128 )

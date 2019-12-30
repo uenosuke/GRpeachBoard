@@ -36,7 +36,7 @@ phaseCounter enc2(2);
 
 ManualControl Controller;
 
-//AMT203V amt203(&SPI, PIN_CSB);
+AMT203V amt203(&SPI, PIN_CSB);
 lpms_me1 lpms(&SERIAL_LPMSME1);
 mySDclass mySD;
 myLCDclass myLCD(&SERIAL_LCD);
@@ -54,7 +54,7 @@ Button dip4(PIN_DIP4);
 
 // グローバル変数の設定
 double gPosix = 0.0, gPosiy = 0.0, gPosiz = 0.0;
-//double refVx, refVy, refVz;
+double refVx, refVy, refVz;
 double angle_rad;
 int encX = 0, encY = 0; // X,Y軸エンコーダのカウント値
 int preEncX = 0, preEncY = 0; // X,Y軸エンコーダの"1サンプル前の"カウント値
@@ -316,23 +316,37 @@ void loop()
   // 10msに1回ピン情報を出力する
   if(flag_10ms){
     // ローカル速度から，各車輪の角速度を計算
-    coords refV = Controller.getVel(LJoyX, LJoyY, RJoyY);
-    double refOmegaA, refOmegaB, refOmegaC;
+    double refOmegaR, refOmegaL, refOmegaT;
+    double cosDu, sinDu, thetaDu;
+    int thetaDuEnc, preThetaDuEnc;
 
-    refOmegaA = (-refV.y - refV.z * DIST2WHEEL) / WHEEL_R * GEARRATIO;
-    refOmegaB = ( refV.x*COS_PI_6 + refV.y*SIN_PI_6 - refV.z * DIST2WHEEL) / WHEEL_R * GEARRATIO;
-    refOmegaC = (-refV.x*COS_PI_6 + refV.y*SIN_PI_6 - refV.z * DIST2WHEEL) / WHEEL_R * GEARRATIO;
+    coords refV = Controller.getVel(LjoyX, LjoyY, RjoyY);
+
+    // ターンテーブルの角度取得
+    thetaDuEnc = amt203.getEncount(); 
+    if( thetaDuEnc == -1 ){
+      thetaDuEnc = preThetaDuEnc; // -1はエラーなので，前の値を格納しておく
+    }
+    preThetaDuEnc = thetaDuEnc;
+    thetaDu = (double)thetaDuEnc*2*PI / TT_RES4;	// 角度に変換
+    
+    // 車輪やターンテーブルの指令速度を計算
+    cosDu = cos(thetaDu);
+    sinDu = sin(thetaDu);
+    refOmegaR = ( ( cosDu - sinDu ) * refV.x + ( sinDu + cosDu ) * refV.y ) / RADIUS_R;// right
+    refOmegaL = ( ( cosDu + sinDu ) * refV.x + ( sinDu - cosDu ) * refV.y ) / RADIUS_L;// left
+    refOmegaT = ( - ( 2 * sinDu / W ) * refV.x + ( 2 * cosDu / W ) * refV.y - refV.z ) * GEARRATIO;// turntable
 
     // RoboClawの指令値に変換
-    double mdCmdA, mdCmdB, mdCmdC;
-    mdCmdA = refOmegaA * _2RES_PI;
-    mdCmdB = refOmegaB * _2RES_PI;
-    mdCmdC = refOmegaC * _2RES_PI;
+    double mdCmdR, mdCmdL, mdCmdT;
+    mdCmdR = refOmegaR * _2RES_PI;
+    mdCmdL = refOmegaL * _2RES_PI;
+    mdCmdT = refOmegaT * _2RES_PI_T;
 
     // モータにcmdを送り，回す
-    MD.SpeedM1(ADR_MD1, (int)mdCmdA);// 右前
-    MD.SpeedM2(ADR_MD1, (int)mdCmdB);// 左前
-    MD.SpeedM2(ADR_MD2, (int)mdCmdC);// 右後
+    MD.SpeedM1(ADR_MD1, -(int)mdCmdR);// 右前
+    MD.SpeedM2(ADR_MD1,  (int)mdCmdL);// 左前
+    MD.SpeedM1(ADR_MD2,  (int)mdCmdT);// 右後
 
     // SDカードにログを吐く
     String dataString = "";
@@ -344,7 +358,7 @@ void loop()
       dataString = "";
     }
     dataString += String(gPosix, 4) + "," + String(gPosiy, 4) + "," + String(gPosiz, 4);
-    dataString += "," + String(refV.x, 4) + "," + String(refV.y, 4) + "," + String(refV.z, 4);
+    dataString += "," + String(refVx, 4) + "," + String(refVy, 4) + "," + String(refVz, 4);
 
     mySD.write_logdata(dataString);
     
@@ -380,32 +394,13 @@ void loop()
     SERIAL_XBEE.print("\tencount2 ");
     SERIAL_XBEE.println(enc2.getCount());*/
 
-    //SERIAL_XBEE.print(refVx);
-    //SERIAL_XBEE.print(" ");
-    //SERIAL_XBEE.print(refVy);
-    //SERIAL_XBEE.print(" ");
-    //SERIAL_XBEE.println(refVz);
-    //SERIAL_XBEE.print(" ");
-    //SERIAL_XBEE.println(thetaDuEnc);
-
-    Serial.print(refV.x);
-    Serial.print(" ");
-    Serial.print(refV.y);
-    Serial.print(" ");
-    Serial.print(refV.z);
-    Serial.print(" ");
-    Serial.print(refOmegaA);
-    Serial.print(" ");
-    Serial.print(refOmegaB);
-    Serial.print(" ");
-    Serial.print(refOmegaC);
-    Serial.print(" ");
-    Serial.print(mdCmdA);
-    Serial.print(" ");
-    Serial.print(mdCmdB);
-    Serial.print(" ");
-    Serial.println(mdCmdC);
-    
+    SERIAL_XBEE.print(refVx);
+    SERIAL_XBEE.print(" ");
+    SERIAL_XBEE.print(refVy);
+    SERIAL_XBEE.print(" ");
+    SERIAL_XBEE.print(refVz);
+    SERIAL_XBEE.print(" ");
+    SERIAL_XBEE.println(thetaDuEnc);
 
     SERIAL_XBEE.flush();
 
@@ -422,4 +417,3 @@ void loop()
   }
  //delayMicroseconds(100);
 }
-
