@@ -9,6 +9,14 @@ struct coords{
     double z;
 };
 
+#define SERIAL_LPMSME1  Serial1
+#define SERIAL_ROBOCLAW Serial4
+#define SERIAL_LEONARDO Serial5
+#define SERIAL_LCD      Serial6
+#define SERIAL_XBEE     Serial7
+
+#define PIN_XBEERESET 66
+
 // スイッチやLEDのピン設定
 #define PIN_DIP1 25
 #define PIN_DIP2 24
@@ -93,52 +101,5 @@ struct coords{
 #define SENSOR_NUM  4 // 使用するセンサーの数
 #define ADDRESS_DEFALUT 0b0101001 // 0x29
 #define ADDRESS_00 (ADDRESS_DEFALUT + 2)
-
-// 自己位置推定用エンコーダ関連
-#define _2PI_RES4   ( 2 * 3.141592 / 800 ) // res = 200
-#define RADIUS_X    ( 0.024 )
-#define RADIUS_Y    ( 0.024 )
-
-#define DRIVE_MECHANUM      ( 0 )
-#define DRIVE_OMNI4WHEEL    ( 1 )
-#define DRIVE_OMNI3WHEEL    ( 2 )
-#define DRIVE_DUALWHEEL     ( 3 )
-
-#define DRIVE_MODE  ( DRIVE_OMNI3WHEEL )
-
-#if DRIVE_MODE == DRIVE_DUALWHEEL
-    // 双輪キャスター関連
-    #define PIN_CSB     ( 10 )    // turntableのPIN(CSB)
-    #define RADIUS_R    ( 0.04 )    // wheel radius
-    #define RADIUS_L    ( 0.04 )    // wheel radius
-    #define W           ( 0.265 )    // tread
-    #define GEARRATIO   ( 5.5 )
-    #define TT_RES4     ( 4096 )    // turntableの分解能
-    #define _2RES_PI    ( 2 * 2048 / 3.141592 ) // 駆動輪の角速度[rad/s]からRoboClawの指令値[pulses/s]に変換するための定数  
-    #define _2RES_PI_T  ( 2 * 500 / 3.141592 ) //  ターンテーブルの角速度[rad/s]からRoboClawの指令値[pulses/s]に変換するための定数
-#elif DRIVE_MODE == DRIVE_MECHANUM
-    // メカナム関連
-    #define MECANUM_RES			( 500 )
-    #define MECANUM_HANKEI		( 0.05 )
-    #define MECANUM_HANKEI_D	( 0.15561 )
-    #define MECANUM_HANKEI_L	( 0.26023 )
-#elif DRIVE_MODE == DRIVE_OMNI3WHEEL
-    #define _2RES_PI    ( 2 * 3 / 3.141592 ) // 駆動輪の角速度[rad/s]からRoboClawの指令値[pulses/s]に変換するための定数  
-    #define WHEEL_R		( 0.019 )
-    #define DIST2WHEEL  ( 0.120 )
-    #define GEARRATIO   ( 51.45 )
-    #define COS_PI_6    ( 0.86602540378 )
-    #define SIN_PI_6    ( 0.5 )
-#endif
-
-// RoboClaw関連
-#define ADR_MD1             ( 128 )
-#define ADR_MD2             ( 129 )
-
-//const double _2PI_MEASRMX = 2.0 * PI / MEASURE_RES_MUL_X;
-//const double _2PI_MEASRMY = 2.0 * PI / MEASURE_RES_MUL_Y;
-//const double _0P5_MEASHD = 0.5 / MEASURE_HANKEI_D;
-//const double _MECAHD_ADD_MECAHL = MECANUM_HANKEI_D + MECANUM_HANKEI_L;
-//const double _2MECAR_PI = 2.0 * MECANUM_RES / PI;
 
 #endif
