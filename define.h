@@ -104,7 +104,7 @@ struct coords{
 #define DRIVE_OMNI3WHEEL    ( 2 )
 #define DRIVE_DUALWHEEL     ( 3 )
 
-#define DRIVE_MODE  ( DRIVE_OMNI3WHEEL )
+#define DRIVE_MODE  ( DRIVE_DUALWHEEL )
 
 #if DRIVE_MODE == DRIVE_DUALWHEEL
     // 双輪キャスター関連

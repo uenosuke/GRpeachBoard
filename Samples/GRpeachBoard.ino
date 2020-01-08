@@ -8,10 +8,11 @@
 #include "AMT203VPeach.h"
 #include "lpms_me1Peach.h"
 #include "SDclass.h"
-#include "MotionGenerator.h"
+#include "AutoControl.h"
 #include "LCDclass.h"
 #include "Button.h"
 #include "RoboClaw.h"
+
 
 #define SERIAL_LPMSME1  Serial1
 #define SERIAL_ROBOCLAW Serial4
@@ -36,7 +37,7 @@ myLCDclass myLCD(&SERIAL_LCD);
 // RoboClaw
 RoboClaw MD(&SERIAL_ROBOCLAW,1);//10);
 
-MotionGenerator motion(FOLLOW_TANGENT); // 経路追従(接線方向向く)モードで初期化
+AutoControl Auto;
 
 Button button_up(PIN_SW_UP);
 Button button_down(PIN_SW_DOWN);
@@ -72,14 +73,12 @@ unsigned int ButtonState = 0, LJoyX = 127, LJoyY = 127, RJoyX = 127, RJoyY = 127
 int phase = 0;
 char cmd = 0b00000000;
 
-/* double Kakudoxl, Kakudoxr, Kakudoy, tmpKakudoy;
- double Posix, Posiy, Posiz; */
 double tmpPosix = 0.0, tmpPosiy = 0.0, tmpPosiz = 0.0;
 
 
 // グローバル変数の設定
-double gPosix, gPosiy, gPosiz;//1.5708;//0;
-double refVx, refVy, refVz;
+coords refV = { 0.0, 0.0, 0.0 };
+coords gPosi = { 0.0, 0.0, 0.0 };
 double angle_rad;
 const double _ANGLE_DEG = 45.0;
 
@@ -197,10 +196,10 @@ void timer_warikomi(){
   tmpPosiy += Posiy;
   tmpPosiz += Posiz;
 
-  double tmp_Posiz = gPosiz + ( Posiz * 0.5 ); // つまりgPosi + ( Posiz / 2.0 );
-  gPosiz += Posiz;
-  gPosix += Posix * cos( gPosiz ) - Posiy * sin( gPosiz );
-  gPosiy += Posix * sin( gPosiz ) + Posiy * cos( gPosiz );
+  double tmp_Posiz = gPosi.z + ( Posiz * 0.5 ); // つまりgPosi + ( Posiz / 2.0 );
+  gPosi.z += Posiz;
+  gPosi.x += Posix * cos( gPosi.z ) - Posiy * sin( gPosi.z );
+  gPosi.y += Posix * sin( gPosi.z ) + Posiy * cos( gPosi.z );
 
   static int count_5s = 0;
   count_5s++;
@@ -273,18 +272,7 @@ void setup()
   pinMode(PIN_ENC_A, INPUT);
   pinMode(PIN_ENC_B, INPUT);
   
-  //Buttonクラスで記述があるため省略
-  //pinMode(PIN_DIP1, INPUT);
-  //pinMode(PIN_DIP2, INPUT);
-  //pinMode(PIN_DIP3, INPUT);
-  //pinMode(PIN_DIP4, INPUT);
-
-  //pinMode(PIN_SW_UP, INPUT);
-  //pinMode(PIN_SW_LEFT, INPUT);
-  //pinMode(PIN_SW_RIGHT, INPUT);
-  //pinMode(PIN_SW_DOWN, INPUT);
-  //pinMode(PIN_SW_WHITE, INPUT);
-  //pinMode(PIN_SW_YELLOW, INPUT);
+  // DIPスイッチやタクトスイッチのpinModeはButtonクラスで記述があるため省略
   
   myLCD.color_white(); // LCDの色を白に
   myLCD.clear_display(); // LCDをクリア
@@ -407,15 +395,11 @@ void setup()
   delay(10);
   int button_state;
   int actpathnum;
-  if(zone == RED){//if( !digitalRead(27) ){	// 赤
+  if(zone == RED){ // RED Field
     cmd = BIT_RED;
-    //Serial1.print('L');
-    //Serial1.print(cmd); // 初期化
-    //Serial1.print('\n');
 
-    actpathnum = mySD.path_read(RED, motion.Px, motion.Py, motion.refvel, motion.refangle, motion.acc_mode, motion.acc_count, motion.dec_tbe);
+    actpathnum = Auto.init(&mySD, RED);//←mySD.path_read(RED, motion.Px  , motion.Py, motion.refvel, motion.refangle, motion.acc_mode, motion.acc_count, motion.dec_tbe);
     Serial.println(actpathnum);
-    //mySD.path_read(RED, Px_SD, Py_SD, refvel_SD, refangle_SD);
 
     if((button_state & 0x01)){
       // 通常スタート
@@ -428,24 +412,13 @@ void setup()
       Serial.println("Re-start at RED zone");
       retry_num = 11;
       phase = 100;
-    }/*else if(button_state & 0x04 == 0x04){
-     			// リトライ2
-     			retry_num = 12;
-     			gPosiz = 3.14159265;
-     			phase = 100;
-     		}*/
-  }
-  else{					// 青
+    }
+  }else{ // BLUE Field
     cmd = BIT_BLUE;
-    //Serial1.print('L');
-    //Serial1.print(cmd); // 初期化
-    //Serial1.print('\n');
-
-    //digitalWrite(PIN_BLUE, HIGH);
-    actpathnum = mySD.path_read(BLUE, motion.Px, motion.Py, motion.refvel, motion.refangle, motion.acc_mode, motion.acc_count, motion.dec_tbe);
+    
+    actpathnum = Auto.init(&mySD, BLUE);//←mySD.path_read(BLUE, motion->Px, motion.Py, motion.refvel, motion.refangle, motion.acc_mode, motion.acc_count, motion.dec_tbe);
     Serial.print("path num: ");
     Serial.println(actpathnum);
-    //mySD.path_read(BLUE, Px_SD, Py_SD, refvel_SD, refangle_SD);
 
     if(button_state & 0x01){
       // 通常スタート
@@ -458,12 +431,7 @@ void setup()
       Serial.println("Re-start at BLUE zone");
       retry_num = 1;
       phase = 100;
-    }/*else if(button_state & 0x04 == 0x04){
-     			// リトライ2
-     			retry_num = 2;
-     			gPosiz = 0.0;
-     			phase = 100;
-     		}*/
+    }
   }
 
   myLCD.write_line("### SD-card Read ###", LINE_1);
@@ -501,20 +469,21 @@ void setup()
   myLCD.write_line("Angle:", LINE_3);
   myLCD.write_line("PathN:    Phase:", LINE_4);
 
-  myLCD.write_double(gPosix, LINE_2, 3);
-  myLCD.write_double(gPosiy, LINE_2, 12);
-  myLCD.write_double(gPosiz, LINE_3, 6);
+  myLCD.write_double(gPosi.x, LINE_2, 3);
+  myLCD.write_double(gPosi.y, LINE_2, 12);
+  myLCD.write_double(gPosi.z, LINE_3, 6);
 
   //delay(500);
 
-  gPosix = motion.Px[0];
-  gPosiy = motion.Py[0];
+  gPosi.x = Auto.Px(0);
+  gPosi.y = Auto.Py(0);
 
   //Serial.println(motion.Px[0]);
 
-  motion.initSettings(); // これをやっていないと足回りの指令速度生成しない
-  motion.setConvPara(0.02, 0.997); // 初期化
-  motion.setMaxPathnum(actpathnum); // パス数の最大値
+  // ↓autoで処理？
+  //motion.initSettings(); // これをやっていないと足回りの指令速度生成しない
+  //motion.setConvPara(0.02, 0.997); // 初期化
+  //motion.setMaxPathnum(actpathnum); // パス数の最大値
 
 
   MsTimer2::set(10, timer_warikomi); // 10ms period
@@ -523,14 +492,6 @@ void setup()
   // 自己位置推定用のエンコーダ
   enc1.init();
   enc2.init();
-
-  // 1msごとに定期実行するイベント
-  //queue.call_every(1, &led_thread);
-  // イベントループが廻り続ける
-  //queue.dispatch();
-
-  //SERIAL_XBEE.println("init done");
-
 }
 
 
@@ -547,16 +508,11 @@ void loop()
 
   char state = 0b00000000;
 
-  /* if( !digitalRead
-   	(PIN_SW) ){
-   		reboot_function();
-   	} */
-
-
   if( flag_10ms ){
-    pathNum = motion.getPathNum();
+    coords refV;
     int conv;
 
+    Auto.getRefVel(gPosi);
 
     // ローカル速度から，各車輪の角速度を計算
     double refOmegaR, refOmegaL, refOmegaT;
@@ -569,31 +525,14 @@ void loop()
     thetaDu = thetaDuEnc*2*PI / TT_RES4;	// 角度に変換
     cosDu = cos(thetaDu);
     sinDu = sin(thetaDu);
-    refOmegaR = ( ( cosDu - sinDu ) * refVx + ( sinDu + cosDu ) * refVy ) / RADIUS_R;// right( ( cThetaDu - WPER2L_R * sThetaDu ) * refVx + ( sThetaDu + WPER2L_R * cThetaDu ) * refVy ) / RADIUS_R;
-    refOmegaL = ( ( cosDu + sinDu ) * refVx + ( sinDu - cosDu ) * refVy ) / RADIUS_L;// left( ( cThetaDu + WPER2L_L * sThetaDu ) * refVx + ( sThetaDu - WPER2L_L * cThetaDu ) * refVy ) / RADIUS_L;
-    refOmegaT = ( - ( 2 * sinDu / W ) * refVx + ( 2 * cosDu / W ) * refVy - refVz ) * GEARRATIO;// turntable( ( sThetaDu / L ) * refVx - ( cThetaDu / L ) * refVy + refVz ) * GEARRATIO;
-    //refOmegaA = ( refVx - refVy -refVz * ( _MECAHD_ADD_MECAHL ) ) / MECANUM_HANKEI;// 左前
-    //refOmegaB = ( refVx + refVy -refVz * ( _MECAHD_ADD_MECAHL ) ) / MECANUM_HANKEI;// 左後
-    //refOmegaC = ( refVx - refVy +refVz * ( _MECAHD_ADD_MECAHL ) ) / MECANUM_HANKEI;// 右後
-    //refOmegaD = ( refVx + refVy +refVz * ( _MECAHD_ADD_MECAHL ) ) / MECANUM_HANKEI;// 右前
+    refOmegaR = ( ( cosDu - sinDu ) * refV.x + ( sinDu + cosDu ) * refV.y ) / RADIUS_R;
+    refOmegaL = ( ( cosDu + sinDu ) * refV.x + ( sinDu - cosDu ) * refV.y ) / RADIUS_L;
+    refOmegaT = ( - ( 2 * sinDu / W ) * refV.x + ( 2 * cosDu / W ) * refV.y - refV.z ) * GEARRATIO;
 
     double mdCmdR, mdCmdL, mdCmdT;
     mdCmdR = refOmegaR * _2RES_PI;
     mdCmdL = refOmegaL * _2RES_PI;
     mdCmdT = refOmegaT * _2RES_PI_T;
-
-    // 角度が爆速で動かないように制限(だいたい1rps)
-    /*if(abs(mdCmdT) >= 20000.0){//10000.0){
-      if(mdCmdT < 0.0){ // 負の値だったら
-        mdCmdT = -20000.0;//10000.0;
-      }
-      else if(mdCmdT > 0.0){ // 正の値だったら
-        mdCmdT = 20000.0;//10000.0;
-      }
-    }*/
-
-    // 速度制御のためのコマンドをPIDクラスから得る
-    // 最大値を超えていた場合に制限をかける
 
     static int dataFlag = 0;
     static int dataend = 0;
@@ -606,7 +545,7 @@ void loop()
 
     pre_buttonstate = pre_buttonstate<<1;
     pre_buttonstate &= 0x0F;
-    pre_buttonstate |= !(buttonB>>3);//digitalRead(A1);//pre_buttonstate |= !digitalRead(PIN_BUTTON1);
+    pre_buttonstate |= !(buttonB>>3);
     flag_10ms = false;
   }
 
@@ -621,10 +560,10 @@ void loop()
       first_write = false;
       dataString = "";
     }
-    dataString += String(phase) + "," + String(motion.getPathNum()) + "," + String(motion.onx, 4) + "," + String(motion.ony, 4);
-    dataString += "," + String(gPosix, 4) + "," + String(gPosiy, 4) + "," + String(gPosiz, 4);
-    dataString += "," + String(motion.angle, 4)  + "," + String(motion.dist, 4) + "," + String(motion.refKakudo, 4);
-    dataString += "," + String(refVx, 4) + "," + String(refVy, 4) + "," + String(refVz, 4);
+    dataString += String(phase) + "," + String(Auto.getPathNum()) + "," + String(Auto.onx(), 4) + "," + String(Auto.ony(), 4);
+    dataString += "," + String(gPosi.x, 4) + "," + String(gPosi.y, 4) + "," + String(gPosi.z, 4);
+    dataString += "," + String(Auto.angle(), 4)  + "," + String(Auto.dist(), 4) + "," + String(Auto.refKakudo(), 4);
+    dataString += "," + String(refV.x, 4) + "," + String(refV.y, 4) + "," + String(refV.z, 4);
 
     mySD.write_logdata(dataString);
     /*** SDカード利用のために追加　2019/05/05 ***/
@@ -634,9 +573,9 @@ void loop()
 
   // 100msごとにLCDを更新する
   if(flag_100ms){
-    myLCD.write_double(gPosix, LINE_2, 3);
-    myLCD.write_double(gPosiy, LINE_2, 12);
-    myLCD.write_double(gPosiz, LINE_3, 6);
+    myLCD.write_double(gPosi.x, LINE_2, 3);
+    myLCD.write_double(gPosi.y, LINE_2, 12);
+    myLCD.write_double(gPosi.z, LINE_3, 6);
     myLCD.write_int(pathNum, LINE_4, 6);
     myLCD.write_int(phase, LINE_4, 16);
     
