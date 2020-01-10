@@ -214,9 +214,7 @@ void setup()
   delay(10);
   digitalWrite(PIN_XBEERESET,1);
   delay(10);
-
-  SPI1.begin(); // チェック用
-
+  
   pinMode(PIN_SW, INPUT); // オンボードのスイッチ
 
   pinMode(PIN_LED_1, OUTPUT);
@@ -232,6 +230,7 @@ void setup()
   myLCD.clear_display(); // LCDをクリア
 
   // AMT203Vの初期化
+  SPI.setClockDivider(SPI_CLOCK_DIV16); //SPI通信のクロックを1MHzに設定 beginの前にやる必要があるのかな？
   SPI.begin(); // ここでSPIをbeginしてあげないとちゃんと動かなかった
   // if(amt203.init() != 1) error_stop();
   LEDblink(PIN_LED_GREEN, 2, 100); // 初期が終わった証拠にブリンク

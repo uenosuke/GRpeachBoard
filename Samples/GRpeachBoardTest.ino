@@ -1,4 +1,5 @@
 // このプログラムは，GR-PEACHボードの動作確認用のプログラムです
+// 例えば基板作成後に，ボードが問題なく動作するかを確認します
 // http://downloads.basicmicro.com/code/arduino.zip
 // 作成日 2019年12月28日
 // 作成者 uenosuke
