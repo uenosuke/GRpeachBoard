@@ -35,6 +35,11 @@ void Platform::deadReckoningInit(coords initValue){
     initialized = true;
 }
 
+// 自己位置推定値(Posi)を外部からセット
+void Platform::setPosi(coords tempPosi){
+    Posi = tempPosi;
+}
+
 // エンコーダのカウント値と，ジャイロセンサから取得した角度をもとに自己位置を計算する
 coords Platform::getPosi(int encX, int encY, double angle_rad){
     if(initialized){

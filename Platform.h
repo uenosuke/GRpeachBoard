@@ -51,6 +51,7 @@ public:
     /*********** 関数宣言 ***********/
     Platform();
     void deadReckoningInit(coords);
+    void setPosi(coords);
     coords getPosi(int, int, double);
     int VelocityControl(coords);
 
