@@ -14,7 +14,7 @@
 #include "phaseCounterPeach.h"
 #include "lpms_me1Peach.h"
 #include "SDclass.h"
-#include "MotionGenerator.h"
+#include "AutoControl.h"
 #include "LCDclass.h"
 #include "Button.h"
 #include "ManualControl.h"
@@ -146,7 +146,7 @@ void timer_warikomi(){
   // LPMS-ME1のから角度を取得
   angle_rad = (double)lpms.get_z_angle();
 
-  gPosi = platform.getGposi(encX, encY, angle_rad);
+  gPosi = platform.getPosi(encX, encY, angle_rad);
   
 }
 
@@ -239,14 +239,14 @@ void setup()
 
   myLCD.write_line("Angle:", LINE_3);
 
-  myLCD.write_double(gPosix, LINE_2, 3);
-  myLCD.write_double(gPosiy, LINE_2, 12);
-  myLCD.write_double(gPosiz, LINE_3, 6);
+  myLCD.write_double(gPosi.x, LINE_2, 3);
+  myLCD.write_double(gPosi.y, LINE_2, 12);
+  myLCD.write_double(gPosi.z, LINE_3, 6);
 
   enc1.init();
   enc2.init();
 
-  platform.initDeadReckoning(gPosi);
+  platform.deadReckoningInit(gPosi);
 
   MsTimer2::set(10, timer_warikomi); // 10ms period
   MsTimer2::start();
@@ -294,7 +294,7 @@ void loop()
       first_write = false;
       dataString = "";
     }
-    dataString += String(gPosix, 4) + "," + String(gPosiy, 4) + "," + String(gPosiz, 4);
+    dataString += String(gPosi.x, 4) + "," + String(gPosi.y, 4) + "," + String(gPosi.z, 4);
     dataString += "," + String(refV.x, 4) + "," + String(refV.y, 4) + "," + String(refV.z, 4);
 
     mySD.write_logdata(dataString);
@@ -343,20 +343,7 @@ void loop()
     Serial.print(" ");
     Serial.print(refV.y);
     Serial.print(" ");
-    Serial.print(refV.z);
-    Serial.print(" ");
-    Serial.print(refOmegaA);
-    Serial.print(" ");
-    Serial.print(refOmegaB);
-    Serial.print(" ");
-    Serial.print(refOmegaC);
-    Serial.print(" ");
-    Serial.print(mdCmdA);
-    Serial.print(" ");
-    Serial.print(mdCmdB);
-    Serial.print(" ");
-    Serial.println(mdCmdC);
-
+    Serial.println(refV.z);
     SERIAL_XBEE.flush();
 
     flag_10ms = false;
@@ -364,9 +351,9 @@ void loop()
 
   // 100msごとにLCDを更新する
   if(flag_100ms){
-    myLCD.write_double(gPosix, LINE_2, 3);
-    myLCD.write_double(gPosiy, LINE_2, 12);
-    myLCD.write_double(gPosiz, LINE_3, 6);
+    myLCD.write_double(gPosi.x, LINE_2, 3);
+    myLCD.write_double(gPosi.y, LINE_2, 12);
+    myLCD.write_double(gPosi.z, LINE_3, 6);
     
     flag_100ms = false;
   }

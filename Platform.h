@@ -50,12 +50,12 @@ public:
 
     /*********** 関数宣言 ***********/
     Platform();
-    initDeadReckoning();
-    coords getGposi(double, double, double);
-    int VelocityControl(coord);
+    void deadReckoningInit(coords);
+    coords getPosi(int, int, double);
+    int VelocityControl(coords);
 
 private:
-    coords gPosi;
+    coords Posi;
     int preEncX, preEncY;
     double pre_angle_rad;
     bool initialized;

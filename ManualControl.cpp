@@ -1,9 +1,10 @@
-// ゲームコントローラのジョイスティックデータから，
-// 指令速度を計算するクラス
+// ゲームコントローラのジョイスティックデータから，ローパスフィルタを用いて指令速度を生成するクラス
+// 
 // 作成日：2019年12月30日
 // 作成者：上野祐樹
 
 #include "ManualControl.h"
+#include "lpms_me1Peach.h"
 #include "Filter.h"
 
 Filter velX_filter(INT_TIME);
@@ -12,12 +13,16 @@ Filter velZ_filter(INT_TIME);
 
 ManualControl::ManualControl()
 {
-    velX_filter.setLowPassPara(0.25, 0.0);//Tと初期値を設定
-    velY_filter.setLowPassPara(0.25, 0.0);//Tと初期値を設定
-    velZ_filter.setLowPassPara(0.25, 0.0);//Tと初期値を設定
+    velX_filter.setLowPassPara(0.25, 0.0);//ローパスフィルタのTと初期値を設定
+    velY_filter.setLowPassPara(0.25, 0.0);//ローパスフィルタのTと初期値を設定
+    velZ_filter.setLowPassPara(0.25, 0.0);//ローパスフィルタのTと初期値を設定
+
+    anglePIDEnable = false;
 }
 
-coords ManualControl::getVel(unsigned int JoyX, unsigned int JoyY, unsigned int JoyZ)
+
+
+coords ManualControl::getRefVel(unsigned int JoyX, unsigned int JoyY, unsigned int JoyZ)
 {
     int joyraw;
     coords rawV, refV;

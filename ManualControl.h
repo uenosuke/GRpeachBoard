@@ -14,9 +14,10 @@ public:
     /*********** 関数宣言 ***********/
     ManualControl();
     
-    coords getVel(unsigned int, unsigned int, unsigned int);
+    coords getRefVel(unsigned int, unsigned int, unsigned int);
 
 private:
+    bool anglePIDEnable;
     
 };
 

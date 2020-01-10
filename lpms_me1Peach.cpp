@@ -14,6 +14,7 @@ lpms_me1::lpms_me1(HardwareSerial* xserial){
   pre_rawanglez = 0.0;
 
   init_ignore = true;
+  init_done = false;
 }
 
 // コマンドモードへの移行
@@ -119,47 +120,52 @@ void lpms_me1::get_sensor_data(){
 }
 
 float lpms_me1::get_z_angle(){
-  get_sensor_data();
-  int response = recv_proc(10);
-  if(response == 16 ){
-    unsigned int bits_dataz = (buffer[12] | (buffer[13]<<8)) | ((buffer[14]<<16) | (buffer[15]<<24));
-    unsigned int mantissa_part = bits_dataz & 0x7FFFFF;
-    unsigned int copy_matissa_part = mantissa_part;
-    float k = pow(2.0f, -23);
-    float real_mantissa = 0.0f;
-    
-    for(int i = 0; i < 23; i++){
-      real_mantissa += k * (float)(copy_matissa_part & 0x000001);
-      copy_matissa_part = copy_matissa_part >> 1;
-      k *= 2.0f;
-    }
-    
-    int exponent = (int)((bits_dataz & 0x7F800000) >> 23) - 127;
-    float rawanglez = pow(2.0f, exponent) * (1.0f + real_mantissa);
-    if(bits_dataz>>31){
-      rawanglez *= -1.0f;
-    }
-
-    float diff_rawanglez;
-    if(init_ignore) {
-      diff_rawanglez = 0.0;
-    }else{
-      diff_rawanglez = rawanglez - pre_rawanglez;
-    }
-    if(fabs(diff_rawanglez) >= 3.0){
-      if(rawanglez < 0){ //+から-へ回ったとき
-        anglez += PIx2 + diff_rawanglez;
-      }else{ // -から+へ回ったとき
-        anglez += -PIx2 + diff_rawanglez;
+  if(init_done){
+    get_sensor_data();
+    int response = recv_proc(10);
+    // 受信は浮動小数点(符号部，指数部，仮数部)に分かれて送られてくるので，以下でunpacking
+    if(response == 16 ){
+      unsigned int bits_dataz = (buffer[12] | (buffer[13]<<8)) | ((buffer[14]<<16) | (buffer[15]<<24));
+      unsigned int mantissa_part = bits_dataz & 0x7FFFFF; // 仮数部を取得
+      unsigned int copy_matissa_part = mantissa_part;
+      float k = pow(2.0f, -23);
+      float real_mantissa = 0.0f;
+      
+      for(int i = 0; i < 23; i++){
+        real_mantissa += k * (float)(copy_matissa_part & 0x000001); 
+        copy_matissa_part = copy_matissa_part >> 1;
+        k *= 2.0f;
       }
-    }else{
-      anglez += diff_rawanglez;
-    }
-    pre_rawanglez = rawanglez;
+      
+      int exponent = (int)((bits_dataz & 0x7F800000) >> 23) - 127; // 指数部を取得
+      float rawanglez = pow(2.0f, exponent) * (1.0f + real_mantissa);
+      if(bits_dataz>>31){ // 符号部の値に応じて+-を変更
+        rawanglez *= -1.0f;
+      }
 
-    return anglez;
+      // センサは-pi ~ +pi の範囲で取れるので，差分を積算していくことで連続して取れるようにする
+      float diff_rawanglez;
+      if(init_ignore) {
+        diff_rawanglez = 0.0;
+      }else{
+        diff_rawanglez = rawanglez - pre_rawanglez;
+      }
+
+      if(fabs(diff_rawanglez) >= 3.0){ 
+        if(rawanglez < 0){ //+から-へ回ったとき
+          anglez += PIx2 + diff_rawanglez;
+        }else{ // -から+へ回ったとき
+          anglez += -PIx2 + diff_rawanglez;
+        }
+      }else{
+        anglez += diff_rawanglez;
+      }
+      pre_rawanglez = rawanglez;
+
+      return anglez;
+    }
   }
-  return 0.0;
+  return 0.0; // 初期化が終わっていない場合は，0を返す
 }
 
 int lpms_me1::recv_proc(int timeout_num = 10){
@@ -266,70 +272,73 @@ int lpms_me1::init(){
   byte trash;
   int datanum, result[4] = {0};
 
-  // ここは Serial1 をジャイロセンサに使うことを前提に書かれている
-  // P2_3 を CTSピンとして使うための設定
-  /***** ポートの初期化 *****/
-  GPIO.PIBC2 &= ~0x0008; // ポート入力バッファ制御レジスタ 入力バッファ禁止
-	GPIO.PBDC2 &= ~0x0008; // ポート双方向制御レジスタ 双方向モードを禁止
-	GPIO.PM2 &= ~0x0008; // ポートモードレジスタ 入力モード
-	GPIO.PMC2 &= ~0x0008; // ポートモード制御レジスタ ポートモード
-	GPIO.PIPC2 &= ~0x0008; // ポート IP 制御レジスタ　入出力はPMn.PMnmビットによって制御されます
-		
-	/***** 入力機能のポート設定 *****/
-	GPIO.PBDC2 |= 0x0008; // ポート双方向制御レジスタ 双方向モードを許可
-		
-	/***** ポート設定 *****/
-	GPIO.PFC2 |= 0x0008;
-	GPIO.PFCE2 &= ~0x0008;
-	GPIO.PFCAE2 |= 0x0008;
+  if(init_done){
+    // ここは Serial1 をジャイロセンサに使うことを前提に書かれている
+    // P2_3 を CTSピンとして使うための設定
+    /***** ポートの初期化 *****/
+    GPIO.PIBC2 &= ~0x0008; // ポート入力バッファ制御レジスタ 入力バッファ禁止
+    GPIO.PBDC2 &= ~0x0008; // ポート双方向制御レジスタ 双方向モードを禁止
+    GPIO.PM2 &= ~0x0008; // ポートモードレジスタ 入力モード
+    GPIO.PMC2 &= ~0x0008; // ポートモード制御レジスタ ポートモード
+    GPIO.PIPC2 &= ~0x0008; // ポート IP 制御レジスタ　入出力はPMn.PMnmビットによって制御されます
+      
+    /***** 入力機能のポート設定 *****/
+    GPIO.PBDC2 |= 0x0008; // ポート双方向制御レジスタ 双方向モードを許可
+      
+    /***** ポート設定 *****/
+    GPIO.PFC2 |= 0x0008;
+    GPIO.PFCE2 &= ~0x0008;
+    GPIO.PFCAE2 |= 0x0008;
 
-	GPIO.PIPC2 |= 0x0008; // ポート IP 制御レジスタ　入出力はPMn.PMnmビットによって制御されます
-	GPIO.PMC2 |= 0x0008; // ポートモード制御レジスタ ポートモード
+    GPIO.PIPC2 |= 0x0008; // ポート IP 制御レジスタ　入出力はPMn.PMnmビットによって制御されます
+    GPIO.PMC2 |= 0x0008; // ポートモード制御レジスタ ポートモード
 
-  // CTSピンを使うための設定
-  CPG.STBCR4 &= ~0x40; // FIFO内臓シリアルコミュニケーションインタフェースチャンネル1は動作(これをやらないと以下が書き変わらない)
-  SCIF1.SCFCR |= 0x08; // CTS#1 を利用
+    // CTSピンを使うための設定
+    CPG.STBCR4 &= ~0x40; // FIFO内臓シリアルコミュニケーションインタフェースチャンネル1は動作(これをやらないと以下が書き変わらない)
+    SCIF1.SCFCR |= 0x08; // CTS#1 を利用
 
-  serial->begin(115200);
+    serial->begin(115200);
 
-  datanum = serial->available();
-  for(int i = 0; i < datanum; i++){
-    trash = serial->read(); // ゴミデータを捨てる
+    datanum = serial->available();
+    for(int i = 0; i < datanum; i++){
+      trash = serial->read(); // ゴミデータを捨てる
+    }
+    
+    do{
+      goto_command_mode();
+      //Serial.print("goto command mode sent: ");
+      result[0] = recv_proc(500);
+      //Serial.println(result[0]);
+    }while(result[0] != 0);
+    
+    do{
+      set_transmit_data();
+      //Serial.print("set transmit data command sent: ");
+      result[1] = recv_proc(500);
+      //Serial.println(result[1]);
+    }while(result[1] != 0);
+
+    //set_filter_mode();
+    //Serial.print("set filter mode sent: ");
+    //result[2] = recv_proc(1000);
+    //Serial.println(result[2]);
+
+    delay(10); // これがないと，データが正常に取れなくなる
+    
+    do{
+      set_offset();
+      //Serial.print("set offset sent: ");
+      result[3] = recv_proc(500);
+      //Serial.println(result[3]);
+    }while(result[3] != 0);
+
+    for(int i = 0; i < 5; i++){
+      get_z_angle();
+      delay(10);
+    }
+
+    init_ignore = false;
   }
-  
-  do{
-    goto_command_mode();
-    //Serial.print("goto command mode sent: ");
-    result[0] = recv_proc(500);
-    //Serial.println(result[0]);
-  }while(result[0] != 0);
-  
-  do{
-    set_transmit_data();
-    //Serial.print("set transmit data command sent: ");
-    result[1] = recv_proc(500);
-    //Serial.println(result[1]);
-  }while(result[1] != 0);
-
-  //set_filter_mode();
-  //Serial.print("set filter mode sent: ");
-  //result[2] = recv_proc(1000);
-  //Serial.println(result[2]);
-
-  delay(10); // これがないと，データが正常に取れなくなる
-  
-  do{
-    set_offset();
-    //Serial.print("set offset sent: ");
-    result[3] = recv_proc(500);
-    //Serial.println(result[3]);
-  }while(result[3] != 0);
-
-  for(int i = 0; i < 5; i++){
-    get_z_angle();
-    delay(10);
-  }
-  init_ignore = false;
 
   //if(result[0] >= 0 && result[1] >= 0) digitalWrite(PIN_LED3, HIGH);
   //if(result[2] >= 0 && result[3] >= 0) digitalWrite(PIN_LED2, HIGH);

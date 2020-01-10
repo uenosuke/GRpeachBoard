@@ -27,16 +27,16 @@ Platform::Platform(){
 
 // 自己位置推定の初期化
 void Platform::deadReckoningInit(coords initValue){
-    gPosi = initValue;
+    Posi = initValue;
 
     preEncX = 0;
     preEncY = 0;
-    pre_angle_rad = gPosi.z;
+    pre_angle_rad = Posi.z;
     initialized = true;
 }
 
 // エンコーダのカウント値と，ジャイロセンサから取得した角度をもとに自己位置を計算する
-coord Platform::getGposi(int encX, int encY, double angle_rad){
+coords Platform::getPosi(int encX, int encY, double angle_rad){
     if(initialized){
         // ローカル座標系での変化量を計算(zは角度)
         coords diff;
@@ -53,19 +53,19 @@ coord Platform::getGposi(int encX, int encY, double angle_rad){
         diff.y = RADIUS_Y * angY; //RADIUS_Y はY軸エンコーダの車輪半径
 
         // グローバル座標系での変化量に変換し，これまでのデータに加算することで自己位置推定完了
-        gPosi.z += diff.z;
-        gPosi.x += diff.x * cos( gPosi.z ) - diff.y * sin( gPosi.z );
-        gPosi.y += diff.x * sin( gPosi.z ) + diff.y * cos( gPosi.z );
+        Posi.z += diff.z;
+        Posi.x += diff.x * cos( Posi.z ) - diff.y * sin( Posi.z );
+        Posi.y += diff.x * sin( Posi.z ) + diff.y * cos( Posi.z );
         
         // 1サンプル前のデータとして今回取得したデータを格納
         preEncX = encX;
         preEncY = encY;
         pre_angle_rad = angle_rad;
     }
-    return gPosi;
+    return Posi;
 }
 
-int Platform::VelocityControl(coord refV){
+int Platform::VelocityControl(coords refV){
 #if DRIVE_UNIT == PLATFORM_OMNI3WHEEL
     double refOmegaA, refOmegaB, refOmegaC;
 
