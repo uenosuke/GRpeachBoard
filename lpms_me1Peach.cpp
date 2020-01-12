@@ -272,7 +272,7 @@ int lpms_me1::init(){
   byte trash;
   int datanum, result[4] = {0};
 
-  if(init_done){
+  if(!init_done){
     // ここは Serial1 をジャイロセンサに使うことを前提に書かれている
     // P2_3 を CTSピンとして使うための設定
     /***** ポートの初期化 *****/
@@ -342,6 +342,9 @@ int lpms_me1::init(){
 
   //if(result[0] >= 0 && result[1] >= 0) digitalWrite(PIN_LED3, HIGH);
   //if(result[2] >= 0 && result[3] >= 0) digitalWrite(PIN_LED2, HIGH);
-  if((result[0] + result[1] + result[3]) == 0) return 1;
+  if((result[0] + result[1] + result[3]) == 0){
+    init_done = true;
+    return 1;
+  } 
   else return (result[0] + result[1] + result[3]);
 }

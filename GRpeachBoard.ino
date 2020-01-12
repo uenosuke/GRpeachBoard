@@ -131,7 +131,7 @@ void timer_warikomi(){
   }
 
   // フラグ立てるための処理
-  flag_10ms = true;
+/*  flag_10ms = true;
   if(count_flag >= 10){
     flag_100ms = true;
     count_flag = 0;
@@ -142,11 +142,13 @@ void timer_warikomi(){
   // 自己位置推定用エンコーダのカウント値取得
   encX = -enc1.getCount();
   encY =  enc2.getCount();
-
+*/
   // LPMS-ME1のから角度を取得
-  angle_rad = (double)lpms.get_z_angle();
+  double angle_rad = (double)lpms.get_z_angle();
+  Serial.println(angle_rad);
+  //gPosi.z = angle_rad;
 
-  gPosi = platform.getPosi(encX, encY, angle_rad);
+  //gPosi = platform.getPosi(encX, encY, angle_rad);
   
 }
 
@@ -196,8 +198,8 @@ void setup()
   myLCD.clear_display(); // LCDをクリア
 
   // AMT203Vの初期化
-  SPI.setClockDivider(SPI_CLOCK_DIV16); //SPI通信のクロックを1MHzに設定 beginの前にやる必要があるのかな？
-  SPI.begin(); // ここでSPIをbeginしてあげないとちゃんと動かなかった
+  //SPI.setClockDivider(SPI_CLOCK_DIV16); //SPI通信のクロックを1MHzに設定 beginの前にやる必要があるのかな？
+  //SPI.begin(); // ここでSPIをbeginしてあげないとちゃんと動かなかった
   // if(amt203.init() != 1) error_stop();
   LEDblink(PIN_LED_GREEN, 2, 100); // 初期が終わった証拠にブリンク
   Serial.println("AMT203V init done!");
@@ -282,7 +284,7 @@ void loop()
 
   // 10msに1回ピン情報を出力する
   if(flag_10ms){
-    coords refV = controller.getVel(LJoyX, LJoyY, RJoyY); // ジョイスティックの値から，目標速度を生成
+    coords refV = controller.getRefVel(LJoyX, LJoyY, RJoyY); // ジョイスティックの値から，目標速度を生成
     platform.VelocityControl(refV); // 目標速度に応じて，プラットフォームを制御
 
     // SDカードにログを吐く
@@ -343,7 +345,9 @@ void loop()
     Serial.print(" ");
     Serial.print(refV.y);
     Serial.print(" ");
-    Serial.println(refV.z);
+    Serial.print(refV.z);
+    Serial.print(" ");
+    Serial.println(gPosi  .z);
     SERIAL_XBEE.flush();
 
     flag_10ms = false;
