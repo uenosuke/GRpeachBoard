@@ -131,7 +131,7 @@ void timer_warikomi(){
   }
 
   // フラグ立てるための処理
-/*  flag_10ms = true;
+  flag_10ms = true;
   if(count_flag >= 10){
     flag_100ms = true;
     count_flag = 0;
@@ -142,13 +142,10 @@ void timer_warikomi(){
   // 自己位置推定用エンコーダのカウント値取得
   encX = -enc1.getCount();
   encY =  enc2.getCount();
-*/
-  // LPMS-ME1のから角度を取得
-  double angle_rad = (double)lpms.get_z_angle();
-  Serial.println(angle_rad);
-  //gPosi.z = angle_rad;
 
-  //gPosi = platform.getPosi(encX, encY, angle_rad);
+  // LPMS-ME1のから角度を取得
+  angle_rad = (double)lpms.get_z_angle();
+  gPosi = platform.getPosi(encX, encY, angle_rad);
   
 }
 
@@ -193,21 +190,17 @@ void setup()
   
   pinMode(PIN_ENC_A, INPUT);
   pinMode(PIN_ENC_B, INPUT);
+
+  analogWrite(PIN_LED_RED, 0); // 消しちゃダメ，ぜったい →　LPMSのために
+  analogWrite(PIN_LED_BLUE, 0);
+  analogWrite(PIN_LED_GREEN, 0);
   
   myLCD.color_white(); // LCDの色を白に
   myLCD.clear_display(); // LCDをクリア
 
-  // AMT203Vの初期化
-  //SPI.setClockDivider(SPI_CLOCK_DIV16); //SPI通信のクロックを1MHzに設定 beginの前にやる必要があるのかな？
-  //SPI.begin(); // ここでSPIをbeginしてあげないとちゃんと動かなかった
-  // if(amt203.init() != 1) error_stop();
-  LEDblink(PIN_LED_GREEN, 2, 100); // 初期が終わった証拠にブリンク
-  Serial.println("AMT203V init done!");
-  Serial.flush();
-  
   // LPMS-ME1の初期化
-  if(lpms.init() != 1) error_stop();
-  LEDblink(PIN_LED_BLUE, 2, 100);  // 初期が終わった証拠にブリンク
+  if(lpms.init() != 1) error_stop(); // 理由はわからないが，これをやる前にLEDblinkかanalogWriteを実行していないと初期化できない
+  LEDblink(PIN_LED_BLUE, 2, 100);  // 初期化が終わった証拠にブリンク
   Serial.println("LPMS-ME1 init done!");
   Serial.flush();
   
@@ -248,7 +241,7 @@ void setup()
   enc1.init();
   enc2.init();
 
-  platform.deadReckoningInit(gPosi);
+  platform.platformInit(gPosi);
 
   MsTimer2::set(10, timer_warikomi); // 10ms period
   MsTimer2::start();
@@ -347,7 +340,7 @@ void loop()
     Serial.print(" ");
     Serial.print(refV.z);
     Serial.print(" ");
-    Serial.println(gPosi  .z);
+    Serial.println(gPosi.z);
     SERIAL_XBEE.flush();
 
     flag_10ms = false;

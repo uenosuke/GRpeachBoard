@@ -16,23 +16,25 @@ RoboClaw MD(&SERIAL_ROBOCLAW,1);
 #endif
 
 Platform::Platform(){
-    initialized = false;
-    MD.begin(115200);
-
-#if DRIVE_UNIT == PLATFORM_DUALCASTER
-    SPI.begin();
-    stateamt203 = amt203.init();
-#endif
+    init_done = false;
 }
 
 // 自己位置推定の初期化
-void Platform::deadReckoningInit(coords initValue){
-    Posi = initValue;
+void Platform::platformInit(coords initPosi){
+#if DRIVE_UNIT == PLATFORM_DUALCASTER
+    SPI.begin(); // ここでSPIをbeginしてあげないとちゃんと動かなかった
+    SPI.setClockDivider(SPI_CLOCK_DIV16); //SPI通信のクロックを1MHzに設定 beginの後に置かないと，処理が止まる
+    stateamt203 = amt203.init();
+#endif
+
+    MD.begin(115200);
+
+    Posi = initPosi;
 
     preEncX = 0;
     preEncY = 0;
     pre_angle_rad = Posi.z;
-    initialized = true;
+    init_done = true;
 }
 
 // 自己位置推定値(Posi)を外部からセット
@@ -42,7 +44,7 @@ void Platform::setPosi(coords tempPosi){
 
 // エンコーダのカウント値と，ジャイロセンサから取得した角度をもとに自己位置を計算する
 coords Platform::getPosi(int encX, int encY, double angle_rad){
-    if(initialized){
+    if(init_done){
         // ローカル座標系での変化量を計算(zは角度)
         coords diff;
 
@@ -71,65 +73,67 @@ coords Platform::getPosi(int encX, int encY, double angle_rad){
 }
 
 int Platform::VelocityControl(coords refV){
-#if DRIVE_UNIT == PLATFORM_OMNI3WHEEL
-    double refOmegaA, refOmegaB, refOmegaC;
+    if(init_done){
+        #if DRIVE_UNIT == PLATFORM_OMNI3WHEEL
+            double refOmegaA, refOmegaB, refOmegaC;
 
-    refOmegaA = (-refV.y - refV.z * DIST2WHEEL) / WHEEL_R * GEARRATIO;
-    refOmegaB = ( refV.x*COS_PI_6 + refV.y*SIN_PI_6 - refV.z * DIST2WHEEL) / WHEEL_R * GEARRATIO;
-    refOmegaC = (-refV.x*COS_PI_6 + refV.y*SIN_PI_6 - refV.z * DIST2WHEEL) / WHEEL_R * GEARRATIO;
+            refOmegaA = (-refV.y - refV.z * DIST2WHEEL) / WHEEL_R * GEARRATIO;
+            refOmegaB = ( refV.x*COS_PI_6 + refV.y*SIN_PI_6 - refV.z * DIST2WHEEL) / WHEEL_R * GEARRATIO;
+            refOmegaC = (-refV.x*COS_PI_6 + refV.y*SIN_PI_6 - refV.z * DIST2WHEEL) / WHEEL_R * GEARRATIO;
 
-    // RoboClawの指令値に変換
-    double mdCmdA, mdCmdB, mdCmdC;
-    mdCmdA = refOmegaA * _2RES_PI;
-    mdCmdB = refOmegaB * _2RES_PI;
-    mdCmdC = refOmegaC * _2RES_PI;
+            // RoboClawの指令値に変換
+            double mdCmdA, mdCmdB, mdCmdC;
+            mdCmdA = refOmegaA * _2RES_PI;
+            mdCmdB = refOmegaB * _2RES_PI;
+            mdCmdC = refOmegaC * _2RES_PI;
 
-    // モータにcmdを送り，回す
-    MD.SpeedM1(ADR_MD1, (int)mdCmdA);// 右前
-    MD.SpeedM2(ADR_MD1, (int)mdCmdB);// 左前
-    MD.SpeedM2(ADR_MD2, (int)mdCmdC);// 右後
-#elif DRIVE_UNIT == PLATFORM_DUALCASTER
-    // ターンテーブルの角度取得
-    thetaDuEnc = amt203.getEncount(); 
-    if( thetaDuEnc == -1 ){
-      thetaDuEnc = preThetaDuEnc; // -1はエラーなので，前の値を格納しておく
+            // モータにcmdを送り，回す
+            MD.SpeedM1(ADR_MD1, (int)mdCmdA);// 右前
+            MD.SpeedM2(ADR_MD1, (int)mdCmdB);// 左前
+            MD.SpeedM2(ADR_MD2, (int)mdCmdC);// 右後
+        #elif DRIVE_UNIT == PLATFORM_DUALCASTER
+            // ターンテーブルの角度取得
+            thetaDuEnc = amt203.getEncount(); 
+            if( thetaDuEnc == -1 ){
+            thetaDuEnc = preThetaDuEnc; // -1はエラーなので，前の値を格納しておく
+            }
+            preThetaDuEnc = thetaDuEnc;
+            thetaDu = (double)thetaDuEnc*2*PI / TT_RES4;	// 角度に変換
+            
+            // 車輪やターンテーブルの指令速度を計算
+            cosDu = cos(thetaDu);
+            sinDu = sin(thetaDu);
+            refOmegaR = ( ( cosDu - sinDu ) * refV.x + ( sinDu + cosDu ) * refV.y ) / RADIUS_R;// right
+            refOmegaL = ( ( cosDu + sinDu ) * refV.x + ( sinDu - cosDu ) * refV.y ) / RADIUS_L;// left
+            refOmegaT = ( - ( 2 * sinDu / W ) * refV.x + ( 2 * cosDu / W ) * refV.y - refV.z ) * GEARRATIO;// turntable
+
+            // RoboClawの指令値に変換
+            double mdCmdR, mdCmdL, mdCmdT;
+            mdCmdR = refOmegaR * _2RES_PI;
+            mdCmdL = refOmegaL * _2RES_PI;
+            mdCmdT = refOmegaT * _2RES_PI_T;
+
+            // モータにcmdを送り，回す
+            MD.SpeedM1(ADR_MD1, -(int)mdCmdR);// 右車輪
+            MD.SpeedM2(ADR_MD1,  (int)mdCmdL);// 左車輪
+            MD.SpeedM1(ADR_MD2,  (int)mdCmdT);// ターンテーブル
+        #elif DRIVE_UNIT == PLATFORM_MECHANUM
+            refOmegaA = ( refV.x - refV.y - refV.z * ( MECANUM_HANKEI_D + MECANUM_HANKEI_L ) ) / MECANUM_HANKEI;// 左前
+            refOmegaB = ( refV.x + refV.y - refV.z * ( MECANUM_HANKEI_D + MECANUM_HANKEI_L ) ) / MECANUM_HANKEI;// 左後
+            refOmegaC = ( refV.x - refV.y + refV.z * ( MECANUM_HANKEI_D + MECANUM_HANKEI_L ) ) / MECANUM_HANKEI;// 右後
+            refOmegaD = ( refV.x + refV.y + refV.z * ( MECANUM_HANKEI_D + MECANUM_HANKEI_L ) ) / MECANUM_HANKEI;// 右前
+
+            // RoboClawの指令値に変換
+            double mdCmdA, mdCmdB, mdCmdC, mdCmdD;
+            mdCmdA = refOmegaA * _2RES_PI;
+            mdCmdB = refOmegaB * _2RES_PI;
+            mdCmdC = refOmegaC * _2RES_PI;
+            mdCmdD = refOmegaD * _2RES_PI;
+
+            MD.SpeedM1(ADR_MD1, -(int)mdCmdA);// 右前
+            MD.SpeedM2(ADR_MD1,  (int)mdCmdB);// 左前
+            MD.SpeedM1(ADR_MD2,  (int)mdCmdC);// 右後
+            MD.SpeedM2(ADR_MD2,  (int)mdCmdD);// 左後
+        #endif
     }
-    preThetaDuEnc = thetaDuEnc;
-    thetaDu = (double)thetaDuEnc*2*PI / TT_RES4;	// 角度に変換
-    
-    // 車輪やターンテーブルの指令速度を計算
-    cosDu = cos(thetaDu);
-    sinDu = sin(thetaDu);
-    refOmegaR = ( ( cosDu - sinDu ) * refV.x + ( sinDu + cosDu ) * refV.y ) / RADIUS_R;// right
-    refOmegaL = ( ( cosDu + sinDu ) * refV.x + ( sinDu - cosDu ) * refV.y ) / RADIUS_L;// left
-    refOmegaT = ( - ( 2 * sinDu / W ) * refV.x + ( 2 * cosDu / W ) * refV.y - refV.z ) * GEARRATIO;// turntable
-
-    // RoboClawの指令値に変換
-    double mdCmdR, mdCmdL, mdCmdT;
-    mdCmdR = refOmegaR * _2RES_PI;
-    mdCmdL = refOmegaL * _2RES_PI;
-    mdCmdT = refOmegaT * _2RES_PI_T;
-
-    // モータにcmdを送り，回す
-    MD.SpeedM1(ADR_MD1, -(int)mdCmdR);// 右車輪
-    MD.SpeedM2(ADR_MD1,  (int)mdCmdL);// 左車輪
-    MD.SpeedM1(ADR_MD2,  (int)mdCmdT);// ターンテーブル
-#elif DRIVE_UNIT == PLATFORM_MECHANUM
-    refOmegaA = ( refV.x - refV.y - refV.z * ( MECANUM_HANKEI_D + MECANUM_HANKEI_L ) ) / MECANUM_HANKEI;// 左前
-    refOmegaB = ( refV.x + refV.y - refV.z * ( MECANUM_HANKEI_D + MECANUM_HANKEI_L ) ) / MECANUM_HANKEI;// 左後
-    refOmegaC = ( refV.x - refV.y + refV.z * ( MECANUM_HANKEI_D + MECANUM_HANKEI_L ) ) / MECANUM_HANKEI;// 右後
-    refOmegaD = ( refV.x + refV.y + refV.z * ( MECANUM_HANKEI_D + MECANUM_HANKEI_L ) ) / MECANUM_HANKEI;// 右前
-
-    // RoboClawの指令値に変換
-    double mdCmdA, mdCmdB, mdCmdC, mdCmdD;
-    mdCmdA = refOmegaA * _2RES_PI;
-    mdCmdB = refOmegaB * _2RES_PI;
-    mdCmdC = refOmegaC * _2RES_PI;
-    mdCmdD = refOmegaD * _2RES_PI;
-
-    MD.SpeedM1(ADR_MD1, -(int)mdCmdA);// 右前
-    MD.SpeedM2(ADR_MD1,  (int)mdCmdB);// 左前
-    MD.SpeedM1(ADR_MD2,  (int)mdCmdC);// 右後
-    MD.SpeedM2(ADR_MD2,  (int)mdCmdD);// 左後
-#endif
 }
