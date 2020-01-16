@@ -12,10 +12,10 @@ class AutoControl{
     public:
     AutoControl();
     int init(mySDclass*, int);
-    coords pathTrackingMode(coords gPosi, int mode, int state, int nextPhase);
-    void commandMode(coords gPosi, int nextPhase, boolean next = true);
-    void getSwState(int num);
-    coords getRefVel(coords gPosi);
+    void gPosiInit();
+    coords pathTrackingMode(int mode, int state, int nextPhase);
+    void commandMode(int nextPhase, boolean next = true);
+    coords getRefVel();
 
     int phase = 0;
     int swState = 0;

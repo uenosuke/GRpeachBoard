@@ -1,12 +1,9 @@
 //-----------------------------------------
 // 軌道追従や位置のPID制御を行うためのクラス
 // 作成：2019/05/15 by Yuki Ueno
+// 編集：Miki Nakaone
 //-----------------------------------------
 
-#include "PathTracking.h"
-#include "PIDclass.h"
-#include "Filter.h"
-#include "define.h"
 
 PID posiPIDx(2.5, 0.0, 5.0, INT_TIME);
 PID posiPIDy(3.0, 0.0, 2.0, INT_TIME);
@@ -105,10 +102,10 @@ void PathTracking::initSettings(){
 }
 
 // ベジエ曲線までの垂線距離をニュートン法で求めて，そこまでの距離と接線角度を計算する
-void PathTracking::calcRefpoint(double Posix, double Posiy){
+void PathTracking::calcRefpoint(){
     if(init_done){
-        double tmpx = Px[path_num * 3] - Posix;
-        double tmpy = Py[path_num * 3] - Posiy;
+        double tmpx = Px[path_num * 3] - gPosi.x;
+        double tmpy = Py[path_num * 3] - gPosi.y;
                 
         d_be[path_num] = d_be_[path_num] + Ax[path_num] * tmpx + Ay[path_num] * tmpy;
         e_be[path_num] = e_be_[path_num] + 2*Bx[path_num] * tmpx + 2*By[path_num] * tmpy;
@@ -134,14 +131,14 @@ void PathTracking::calcRefpoint(double Posix, double Posiy){
             angle += 2 * PI;
         }
         //double dist;
-        dist = (ony - Posiy)*cos(angle) - (onx - Posix)*sin(angle);
+        dist = (ony - gPosi.y)*cos(angle) - (onx - gPosi.x)*sin(angle);
 
         epsilon = 1.0;
     }
 }
 
 // モードによって，それぞれ指令速度を計算する
-int PathTracking::calcRefvel(double Posix, double Posiy, double Posiz){
+int PathTracking::calcRefvel(){
     double refVxg, refVyg, refVzg; // グローバル座標系の指定速度
     double tmpPx, tmpPy;
     static int counter = 0;
@@ -149,7 +146,7 @@ int PathTracking::calcRefvel(double Posix, double Posiy, double Posiz){
     if(init_done){
         if(path_num <= max_pathnum){ // パスが存在する場合は以下の処理を行う
             if(mode == FOLLOW_TANGENT || mode == FOLLOW_COMMAND){ // ベジエ曲線追従モード
-                calcRefpoint(Posix, Posiy);
+                calcRefpoint(gPosi.x, gPosi.y);
 
                 double refVtan, refVper, refVrot;
                 if((acc_mode[path_num] == MODE_START || acc_mode[path_num] == MODE_START_STOP) && counter <= acc_count[path_num]){
@@ -169,18 +166,18 @@ int PathTracking::calcRefvel(double Posix, double Posiy, double Posiz){
                 // 旋回は以下の2種類を mode によって変える
                 if(mode == FOLLOW_TANGENT){
                     if(mode_changed){
-                        kakudoPID.PIDinit(angle, Posiz);
+                        kakudoPID.PIDinit(angle, gPosi.z);
                         mode_changed = false;
                     }
-                    refVrot = kakudoPID.getCmd(angle, Posiz, 1.57);//(refKakudo, gPosiz, 1.57);
+                    refVrot = kakudoPID.getCmd(angle, gPosi.z, 1.57);//(refKakudo, gPosiz, 1.57);
                 }else{
                     if(mode_changed){
-                        kakudoPID.PIDinit(refKakudo, Posiz);
+                        kakudoPID.PIDinit(refKakudo, gPosi.z);
                         kakudo_filter.initPrevData(refKakudo);
                         mode_changed = false;
                     }
                     refKakudo = kakudo_filter.SecondOrderLag(refangle[path_num]);
-                    refVrot = kakudoPID.getCmd(refKakudo, Posiz, 1.57);
+                    refVrot = kakudoPID.getCmd(refKakudo, gPosi.z, 1.57);
                 }
 
                 per = refVper;
@@ -188,16 +185,16 @@ int PathTracking::calcRefvel(double Posix, double Posiy, double Posiz){
                 // ローカル座標系の指令速度(グローバル座標系のも込み込み)
                 //refVxとrefVyをコメントアウトするとkakudoPIDのパラメータ調整が出来る(手で押してみて…)
                 //refVperだけにするとyokozurePIDのパラメータ調整できる
-                refVx =  refVtan * cos( Posiz - angle ) + refVper * sin( Posiz - angle );
-                refVy = -refVtan * sin( Posiz - angle ) + refVper * cos( Posiz - angle );
+                refVx =  refVtan * cos( gPosi.z - angle ) + refVper * sin( gPosi.z - angle );
+                refVy = -refVtan * sin( gPosi.z - angle ) + refVper * cos( gPosi.z - angle );
                 refVz =  refVrot;
             }else{ // PID位置制御モード
                 if( mode_changed ){
-                    Px[3 * path_num] = Posix;
-                    Py[3 * path_num] = Posiy;
-                    posiPIDx.PIDinit(Px[3 * path_num], Posix);	// ref, act
-                    posiPIDy.PIDinit(Py[3 * path_num], Posiy);
-                    posiPIDz.PIDinit(refangle[path_num], Posiz);
+                    Px[3 * path_num] = gPosi.x;
+                    Py[3 * path_num] = gPosi.y;
+                    posiPIDx.PIDinit(Px[3 * path_num], gPosi.x);	// ref, act
+                    posiPIDy.PIDinit(Py[3 * path_num], gPosi.y);
+                    posiPIDz.PIDinit(refangle[path_num], gPosi.z);
                     kakudo_filter.initPrevData(refKakudo);
                     setRefKakudo();
                     mode_changed = false;
@@ -213,19 +210,19 @@ int PathTracking::calcRefvel(double Posix, double Posiy, double Posiz){
                 }
 
                 // PIDクラスを使って位置制御を行う(速度の指令地を得る)
-                refVxg = posiPIDx.getCmd(tmpPx, Posix, refvel[path_num]);//(Px[30], gPosix, refvel[phase]);
-                refVyg = posiPIDy.getCmd(tmpPy, Posiy, refvel[path_num]);//(Py[30], gPosiy, refvel[phase]);
+                refVxg = posiPIDx.getCmd(tmpPx, gPosi.x, refvel[path_num]);//(Px[30], gPosix, refvel[phase]);
+                refVyg = posiPIDy.getCmd(tmpPy, gPosi.y, refvel[path_num]);//(Py[30], gPosiy, refvel[phase]);
                 refKakudo = kakudo_filter.SecondOrderLag(refangle[path_num]);
-                refVzg = posiPIDz.getCmd(refangle[path_num], Posiz, 1.57);//角速度に対してrefvelは遅すぎるから　refvel[path_num]);//(0.0, gPosiz, refvel[phase]);
+                refVzg = posiPIDz.getCmd(refangle[path_num], gPosi.z, 1.57);//角速度に対してrefvelは遅すぎるから　refvel[path_num]);//(0.0, gPosiz, refvel[phase]);
 
                 // 上記はグローバル座標系における速度のため，ローカルに変換
-                refVx =  refVxg * cos(Posiz) + refVyg * sin(Posiz);
-                refVy = -refVxg * sin(Posiz) + refVyg * cos(Posiz);
+                refVx =  refVxg * cos(gPosi.z) + refVyg * sin(gPosi.z);
+                refVy = -refVxg * sin(gPosi.z) + refVyg * cos(gPosi.z);
                 refVz =  refVzg;
             }
 
             // 収束判定して，収束していたら　1　を返す
-            dist2goal = sqrt(pow(Posix - Px[3 * path_num + 3], 2.0) + pow(Posiy - Py[3 * path_num + 3], 2.0));
+            dist2goal = sqrt(pow(gPosi.x - Px[3 * path_num + 3], 2.0) + pow(gPosi.y - Py[3 * path_num + 3], 2.0));
             if(mode == FOLLOW_TANGENT || mode == FOLLOW_COMMAND){
                 // 軌道追従制御なら，到達位置からの距離とベジエ曲線の t のどちらかの条件
                 if(dist2goal <= conv_length || t_be >= conv_tnum){
@@ -234,7 +231,7 @@ int PathTracking::calcRefvel(double Posix, double Posiy, double Posiz){
                 }
             }if(mode == POSITION_PID){
                 // 位置制御なら，目標位置と角度両方を見る
-                if(dist2goal <= conv_length && fabs(refangle[path_num] - Posiz)){
+                if(dist2goal <= conv_length && fabs(refangle[path_num] - gPosi.z)){
                     counter = 0;
                     return 1;
                 }
@@ -308,8 +305,8 @@ void PathTracking::setKakudoPIDPara(float xKp, float xKi, float xKd){
 }
 
 
-void PathTracking::kakudoPIDinit(double Posiz){
-    kakudoPID.PIDinit(refKakudo, Posiz);
+void PathTracking::kakudoPIDinit(){
+    kakudoPID.PIDinit(refKakudo, gPosi.z);
 }
 
 void PathTracking::setRefKakudo(){

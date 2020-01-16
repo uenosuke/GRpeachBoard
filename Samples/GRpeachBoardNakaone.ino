@@ -9,6 +9,7 @@
 #include "lpms_me1Peach.h"
 #include "SDclass.h"
 #include "AutoControl.h"
+#include "Platform.h"
 #include "LCDclass.h"
 #include "Button.h"
 #include "RoboClaw.h"
@@ -38,6 +39,7 @@ myLCDclass myLCD(&SERIAL_LCD);
 RoboClaw MD(&SERIAL_ROBOCLAW,1);//10);
 
 AutoControl Auto;
+Platform platform;
 
 Button button_up(PIN_SW_UP);
 Button button_down(PIN_SW_DOWN);
@@ -78,7 +80,7 @@ double tmpPosix = 0.0, tmpPosiy = 0.0, tmpPosiz = 0.0;
 
 // グローバル変数の設定
 coords refV = { 0.0, 0.0, 0.0 };
-coords gPosi = { 0.0, 0.0, 0.0 };
+//coords gPosi = { 0.0, 0.0, 0.0 };
 double angle_rad;
 const double _ANGLE_DEG = 45.0;
 
@@ -174,32 +176,9 @@ void timer_warikomi(){
   encX = -enc1.getCount();
   encY =  enc2.getCount();
 
-  // 角度   encountはdoubleに型変換した方がいいかもしれない
-  double angX, angY;//, lpmsRad;
-  angX = (double)( encX - preEncX ) * _2PI_RES4;
-  angY = (double)( encY - preEncY ) * _2PI_RES4;
-
   angle_rad = (double)lpms.get_z_angle();
 
-  // tmpKakudoy += Kakudoy;
-
-  // ローカル用(zは角度)
-  double Posix, Posiy, Posiz;
-  static double pre_angle_rad = angle_rad;
-  double angle_diff;
-  angle_diff = angle_rad - pre_angle_rad;
-  Posiz = angle_diff;
-  Posix = RADIUS_X * angX;
-  Posiy = RADIUS_Y * angY;
-
-  tmpPosix += Posix;
-  tmpPosiy += Posiy;
-  tmpPosiz += Posiz;
-
-  double tmp_Posiz = gPosi.z + ( Posiz * 0.5 ); // つまりgPosi + ( Posiz / 2.0 );
-  gPosi.z += Posiz;
-  gPosi.x += Posix * cos( gPosi.z ) - Posiy * sin( gPosi.z );
-  gPosi.y += Posix * sin( gPosi.z ) + Posiy * cos( gPosi.z );
+  gPosi = platform.getPosi(encX, enxY, angle_rad);
 
   static int count_5s = 0;
   count_5s++;
@@ -220,11 +199,6 @@ void timer_warikomi(){
     flag_20ms = true;
     count_20ms = 0;
   }
-
-  preEncX = encX;
-  preEncY = encY;
-
-  pre_angle_rad = angle_rad;
 }
 
 void error_stop(){
@@ -475,8 +449,7 @@ void setup()
 
   //delay(500);
 
-  gPosi.x = Auto.Px(0);
-  gPosi.y = Auto.Py(0);
+  Auto.gPosiInit();
 
   //Serial.println(motion.Px[0]);
 
@@ -492,6 +465,8 @@ void setup()
   // 自己位置推定用のエンコーダ
   enc1.init();
   enc2.init();
+
+  platform.deadReckoningInit(gPosi);
 }
 
 
@@ -509,39 +484,13 @@ void loop()
   char state = 0b00000000;
 
   if( flag_10ms ){
+    preGposi = gPosi;
     coords refV;
     int conv;
 
     Auto.getRefVel(gPosi);
-
-    // ローカル速度から，各車輪の角速度を計算
-    double refOmegaR, refOmegaL, refOmegaT;
-    double cosDu, sinDu, thetaDuEnc, preThetaDuEnc, thetaDu;
-    thetaDuEnc = amt203.getEncount();
-    if( thetaDuEnc == -1 ){
-      thetaDuEnc = preThetaDuEnc;
-    }
-    preThetaDuEnc = thetaDuEnc;
-    thetaDu = thetaDuEnc*2*PI / TT_RES4;	// 角度に変換
-    cosDu = cos(thetaDu);
-    sinDu = sin(thetaDu);
-    refOmegaR = ( ( cosDu - sinDu ) * refV.x + ( sinDu + cosDu ) * refV.y ) / RADIUS_R;
-    refOmegaL = ( ( cosDu + sinDu ) * refV.x + ( sinDu - cosDu ) * refV.y ) / RADIUS_L;
-    refOmegaT = ( - ( 2 * sinDu / W ) * refV.x + ( 2 * cosDu / W ) * refV.y - refV.z ) * GEARRATIO;
-
-    double mdCmdR, mdCmdL, mdCmdT;
-    mdCmdR = refOmegaR * _2RES_PI;
-    mdCmdL = refOmegaL * _2RES_PI;
-    mdCmdT = refOmegaT * _2RES_PI_T;
-
-    static int dataFlag = 0;
-    static int dataend = 0;
-
-    // モータにcmd?を送り，回す
-    MD.SpeedM1(ADR_MD1, -(int)mdCmdR);// 右前
-    MD.SpeedM2(ADR_MD1,  (int)mdCmdL);// 左前
-    MD.SpeedM1(ADR_MD2,  (int)mdCmdT);// 右後
-
+    if( gPosi != preGposi ) platform.setPosi(gPosi);
+    platform.VelocityControl(refV); // 目標速度に応じて，プラットフォームを制御
 
     pre_buttonstate = pre_buttonstate<<1;
     pre_buttonstate &= 0x0F;

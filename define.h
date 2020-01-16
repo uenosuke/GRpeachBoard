@@ -9,6 +9,9 @@ struct coords{
     double z;
 };
 
+coords gPosi = {0.0, 0.0, 0.0};
+coords preGposi = {0.0, 0.0, 0.0};
+
 #define SERIAL_LPMSME1  Serial1
 #define SERIAL_ROBOCLAW Serial4
 #define SERIAL_LEONARDO Serial5

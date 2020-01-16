@@ -3,6 +3,10 @@
 
 #include <Arduino.h>
 #include <math.h>
+#include "PathTracking.h"
+#include "PIDclass.h"
+#include "Filter.h"
+#include "define.h"
 
 #define PATHNUM 50
 #define POINTNUM 100

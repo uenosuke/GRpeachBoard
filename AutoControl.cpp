@@ -10,7 +10,13 @@ int AutoControl::init(mySDclass* mySD, int FieldColor){
     mySD->path_read(FieldColor, motion.Px  , motion.Py, motion.refvel, motion.refangle, motion.acc_mode, motion.acc_count, motion.dec_tbe);
 }
 
-coords AutoControl::pathTrackingMode(coords gPosi, int mode, int state, int nextPhase){
+void AutoControl::gPosiInit(){
+    gPosi.x = motion.Px[0];
+    gPosi.y = motion.Py[0];
+    gPosi.z = motion.refangle[0];
+}
+
+coords AutoControl::pathTrackingMode(int mode, int state, int nextPhase){ // 軌道追従モード
     coords refV;
     int pathNum = getPathNum();
 
@@ -37,9 +43,24 @@ coords AutoControl::pathTrackingMode(coords gPosi, int mode, int state, int next
     return refV;
 }
 
-void AutoControl::commandMode(coords gPosi, int nextPhase, boolean next/*=true*/){
+void AutoControl::calibrationGposi(double tempX, double tempY, double tempZ){
+    gPosi.x = tempX;
+    gPosi.y = tempY;
+    gPosi.z = tempZ;
+}
+
+coords AutoControl::commandMode_vel(double tempX, double tempY, double tempZ){
+    coords refV;
+    refV.x = tempX;
+    refV.y = tempY;
+    refV.z = tempZ;
+    return refV;
+}
+
+void AutoControl::commandMode(int nextPhase, boolean next/*=true*/){ // 指定した速度で動かすとき
     int pathNum = getPathNum();
-    if( next ){
+
+    if( next ){ // この動きを一つの曲線とみなす場合
         motion.Px[3*pathNum+3] = gPosi.x;
         motion.Py[3*pathNum+3] = gPosi.y;
         motion.incrPathnum(0.02, 0.997); // 次の曲線へ．括弧の中身は収束に使う数値
@@ -49,20 +70,6 @@ void AutoControl::commandMode(coords gPosi, int nextPhase, boolean next/*=true*/
     }
     
     phase = nextPhase;
-}
-
-// リミットスイッチ押すまでX方向に動き続けるといった処理がある場合に使用
-// 必要に応じて名前を変えたりしてください
-void AutoControl::getSwState(int num){
-    swState = num;
-}
-
-double AutoControl::Px(int num){
-    motion.Px[num];
-}
-
-double AutoControl::Py(int num){
-    motion.Py[num];
 }
 
 int AutoControl::getPathNum(){
@@ -100,29 +107,36 @@ void AutoControl::setMaxPathnum(int pathNum){
 }
 
 // このメソッドの中身はユーザーが書き換える必要あり
-coords AutoControl::getRefVel(coords gPosi){
+coords AutoControl::getRefVel(swState){
     coords refV;
 
     // example >>>>>
     if( phase == 0 ){
-        refV = pathTrackingMode(gPosi, FOLLOW_TANGENT, 7, 1);
+        refV = pathTrackingMode(FOLLOW_TANGENT, 7, 1);
     }else if( phase == 1 ){
-        refV = pathTrackingMode(gPosi, FOLLOW_COMMAND, 8, 2);
+        refV = pathTrackingMode(FOLLOW_COMMAND, 8, 2);
     }else if( phase == 2 ){
-        // 下のように速度指令値を与える場合はrefVel_optionを使用
-        refV.x = 0.5;
-        refV.y = 0.0;
-        refV.z = 0.0;
-        if(swState = 0b0001){
-            commandMode(gPosi, 3);
-            // gPosi.x = 3.0; // 位置のキャリブレーション
-            // gPosi.y = 3.0;
-            // gPosi.z = 3.0;
+        switch( swState ){
+        case 0b0000:
+            commandMode_vel(0.0, 0.0, 0.0);
+            break;
+        case 0b0001:
+            commandMode_vel(0.0, 0.0, 0.0);
+            break;
+        case 0b0010:
+            commandMode_vel(0.0, 0.0, 0.0);
+            break;
+        case 0b0011:
+            commandMode_vel(0.0, 0.0, 0.0);
+            commandMode(3);
+            //calibrationGposi(0.0, 0.0, 0.0);
+            break;
+        default:
+            commandMode_vel(0.0, 0.0, 0.0);
+            break;
         }
     }else{
-        refV.x = 0.0;
-        refV.y = 0.0;
-        refV.z = 0.0;
+        commandMode_vel(0.0, 0.0, 0.0);
     }
 
     return refV;
