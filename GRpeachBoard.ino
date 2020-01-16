@@ -145,7 +145,6 @@ void timer_warikomi(){
 
   // LPMS-ME1のから角度を取得
   angle_rad = (double)lpms.get_z_angle();
-
   gPosi = platform.getPosi(encX, encY, angle_rad);
   
 }
@@ -191,21 +190,17 @@ void setup()
   
   pinMode(PIN_ENC_A, INPUT);
   pinMode(PIN_ENC_B, INPUT);
+
+  analogWrite(PIN_LED_RED, 0); // 消しちゃダメ，ぜったい →　LPMSのために
+  analogWrite(PIN_LED_BLUE, 0);
+  analogWrite(PIN_LED_GREEN, 0);
   
   myLCD.color_white(); // LCDの色を白に
   myLCD.clear_display(); // LCDをクリア
 
-  // AMT203Vの初期化
-  SPI.setClockDivider(SPI_CLOCK_DIV16); //SPI通信のクロックを1MHzに設定 beginの前にやる必要があるのかな？
-  SPI.begin(); // ここでSPIをbeginしてあげないとちゃんと動かなかった
-  // if(amt203.init() != 1) error_stop();
-  LEDblink(PIN_LED_GREEN, 2, 100); // 初期が終わった証拠にブリンク
-  Serial.println("AMT203V init done!");
-  Serial.flush();
-  
   // LPMS-ME1の初期化
-  if(lpms.init() != 1) error_stop();
-  LEDblink(PIN_LED_BLUE, 2, 100);  // 初期が終わった証拠にブリンク
+  if(lpms.init() != 1) error_stop(); // 理由はわからないが，これをやる前にLEDblinkかanalogWriteを実行していないと初期化できない
+  LEDblink(PIN_LED_BLUE, 2, 100);  // 初期化が終わった証拠にブリンク
   Serial.println("LPMS-ME1 init done!");
   Serial.flush();
   
@@ -246,7 +241,7 @@ void setup()
   enc1.init();
   enc2.init();
 
-  platform.deadReckoningInit(gPosi);
+  platform.platformInit(gPosi);
 
   MsTimer2::set(10, timer_warikomi); // 10ms period
   MsTimer2::start();
@@ -282,7 +277,7 @@ void loop()
 
   // 10msに1回ピン情報を出力する
   if(flag_10ms){
-    coords refV = controller.getVel(LJoyX, LJoyY, RJoyY); // ジョイスティックの値から，目標速度を生成
+    coords refV = controller.getRefVel(LJoyX, LJoyY, RJoyY); // ジョイスティックの値から，目標速度を生成
     platform.VelocityControl(refV); // 目標速度に応じて，プラットフォームを制御
 
     // SDカードにログを吐く
@@ -343,7 +338,9 @@ void loop()
     Serial.print(" ");
     Serial.print(refV.y);
     Serial.print(" ");
-    Serial.println(refV.z);
+    Serial.print(refV.z);
+    Serial.print(" ");
+    Serial.println(gPosi.z);
     SERIAL_XBEE.flush();
 
     flag_10ms = false;

@@ -43,6 +43,8 @@ coords preGposi = {0.0, 0.0, 0.0};
 #define PIN_LED_4 38
 #define PIN_LED_ENC 40
 
+#define PIN_CSB 10
+
 // Lernardo からのコントローラ用データのマスクデータ
 #define BUTTON_X  0x0001
 #define BUTTON_Y  0x0002

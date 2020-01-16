@@ -50,7 +50,7 @@ public:
 
     /*********** 関数宣言 ***********/
     Platform();
-    void deadReckoningInit(coords);
+    void platformInit(coords);
     void setPosi(coords);
     coords getPosi(int, int, double);
     int VelocityControl(coords);
@@ -59,7 +59,7 @@ private:
     coords Posi;
     int preEncX, preEncY;
     double pre_angle_rad;
-    bool initialized;
+    bool init_done;
     #if DRIVE_UNIT == PLATFORM_DUALWHEEL
         int stateamt203;
     #endif
