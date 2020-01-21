@@ -4,7 +4,6 @@
 // 作成者：上野祐樹
 
 #include "ManualControl.h"
-#include "lpms_me1Peach.h"
 #include "Filter.h"
 
 Filter velX_filter(INT_TIME);

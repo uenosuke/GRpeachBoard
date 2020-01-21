@@ -9,6 +9,20 @@ struct coords{
     double z;
 };
 
+// Platformの種類を設定
+#define PLATFORM_MECHANUM      ( 0 )
+#define PLATFORM_OMNI4WHEEL    ( 1 )
+#define PLATFORM_OMNI3WHEEL    ( 2 )
+#define PLATFORM_DUALWHEEL     ( 3 )
+
+#define DRIVE_UNIT  ( PLATFORM_DUALWHEEL )
+
+// ManualControlクラス用の定義
+#define JOY_DEADBAND    ( 5 )
+#define JOY_MAXVEL      ( 1.0 )
+#define JOY_MAXANGVEL   ( 2.5 )
+
+
 #define SERIAL_LPMSME1  Serial1
 #define SERIAL_ROBOCLAW Serial4
 #define SERIAL_LEONARDO Serial5
