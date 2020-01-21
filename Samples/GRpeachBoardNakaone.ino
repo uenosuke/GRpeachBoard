@@ -1,22 +1,20 @@
 /* GR-PEACH Sketch Template V2.05.02 */
 #include <Arduino.h>
 #include <MsTimer2.h>
-#include <SPI.h>
 
 #include "define.h"
 #include "phaseCounterPeach.h"
-#include "AMT203VPeach.h"
+//#include "AMT203VPeach.h"
 #include "lpms_me1Peach.h"
 #include "SDclass.h"
 #include "AutoControl.h"
 #include "Platform.h"
 #include "LCDclass.h"
 #include "Button.h"
-#include "RoboClaw.h"
-
+//#include "RoboClaw.h"
 
 #define SERIAL_LPMSME1  Serial1
-#define SERIAL_ROBOCLAW Serial4
+//#define SERIAL_ROBOCLAW Serial4
 #define SERIAL_LEONARDO Serial5
 #define SERIAL_LCD      Serial6
 #define SERIAL_XBEE     Serial7
@@ -25,18 +23,21 @@
 #define INTERVAL 100
 #define PIN_CSB 10
 
+coords gPosi = {0.0, 0.0, 0.0};
+coords preGposi = {0.0, 0.0, 0.0};
+
 // 自己位置推定用のエンコーダ
 phaseCounter enc1(1);
 phaseCounter enc2(2);
 
 // turntableのthetaDu用
-AMT203V amt203(&SPI, PIN_CSB);
+//AMT203V amt203(&SPI, PIN_CSB);
 // lpms-me1
 lpms_me1 lpms(&SERIAL_LPMSME1);
 mySDclass mySD;
 myLCDclass myLCD(&SERIAL_LCD);
 // RoboClaw
-RoboClaw MD(&SERIAL_ROBOCLAW,1);//10);
+//RoboClaw MD(&SERIAL_ROBOCLAW,1);//10);
 
 AutoControl Auto;
 Platform platform;
@@ -178,7 +179,7 @@ void timer_warikomi(){
 
   angle_rad = (double)lpms.get_z_angle();
 
-  gPosi = platform.getPosi(encX, enxY, angle_rad);
+  gPosi = platform.getPosi(encX, encY, angle_rad);
 
   static int count_5s = 0;
   count_5s++;
@@ -223,7 +224,7 @@ void setup()
 
   Serial.begin(115200);
   //Serial0.begin(115200);
-  SERIAL_ROBOCLAW.begin(115200);
+  //SERIAL_ROBOCLAW.begin(115200);
   SERIAL_LEONARDO.begin(115200);
   SERIAL_LCD.begin(115200);
   SERIAL_XBEE.begin(115200);
@@ -233,7 +234,7 @@ void setup()
   digitalWrite(PIN_RESET,1);
   delay(10);
 
-  SPI1.begin(); // チェック用
+  //SPI1.begin(); // チェック用
 
   pinMode(PIN_SW, INPUT);
 
@@ -251,7 +252,7 @@ void setup()
   myLCD.color_white(); // LCDの色を白に
   myLCD.clear_display(); // LCDをクリア
 
-  SPI.begin(); // ここでSPIをbeginしてあげないとちゃんと動かなかった
+  //SPI.begin(); // ここでSPIをbeginしてあげないとちゃんと動かなかった
   //if(amt203.init() != 1) error_stop();
   LEDblink(PIN_LED_GREEN, 2, 100); // 初期が終わった証拠にブリンク
   
@@ -449,8 +450,6 @@ void setup()
 
   //delay(500);
 
-  Auto.gPosiInit();
-
   //Serial.println(motion.Px[0]);
 
   // ↓autoで処理？
@@ -466,7 +465,8 @@ void setup()
   enc1.init();
   enc2.init();
 
-  platform.deadReckoningInit(gPosi);
+  Auto.gPosiInit();
+  platform.platformInit(gPosi);
 }
 
 
@@ -485,11 +485,11 @@ void loop()
 
   if( flag_10ms ){
     preGposi = gPosi;
-    coords refV;
+    //coords refV;
     int conv;
 
-    Auto.getRefVel(gPosi);
-    if( gPosi != preGposi ) platform.setPosi(gPosi);
+    Auto.getRefVel();
+    if( gPosi.x != preGposi.x || gPosi.y != preGposi.y || gPosi.z != preGposi.z ) platform.setPosi(gPosi);
     platform.VelocityControl(refV); // 目標速度に応じて，プラットフォームを制御
 
     pre_buttonstate = pre_buttonstate<<1;

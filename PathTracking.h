@@ -3,7 +3,6 @@
 
 #include <Arduino.h>
 #include <math.h>
-#include "PathTracking.h"
 #include "PIDclass.h"
 #include "Filter.h"
 #include "define.h"
@@ -76,8 +75,8 @@ public:
 
     void initSettings();
 
-    void calcRefpoint(double Posix, double Posiy);
-    int calcRefvel(double Posix, double Posiy, double Posiz);
+    void calcRefpoint();
+    int calcRefvel();
     
     void incrPathnum(double conv_length, double conv_tnum);
     void setConvPara(double conv_length, double conv_tnum);
@@ -94,7 +93,7 @@ public:
     void setPosiPIDzPara(float xKp, float xKi, float xKd);
     void setYokozurePIDPara(float xKp, float xKi, float xKd);
     void setKakudoPIDPara(float xKp, float xKi, float xKd);
-    void kakudoPIDinit(double Posiz);
+    void kakudoPIDinit();
     void setRefKakudo();
 
     double getRefVper();

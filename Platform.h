@@ -8,7 +8,7 @@
 #define PLATFORM_OMNI3WHEEL    ( 2 )
 #define PLATFORM_DUALWHEEL     ( 3 )
 
-#define DRIVE_UNIT  ( PLATFORM_OMNI3WHEEL )
+#define DRIVE_UNIT  ( PLATFORM_DUALWHEEL )
 
 #if DRIVE_UNIT == PLATFORM_DUALWHEEL
     // 双輪キャスター関連

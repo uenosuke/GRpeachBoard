@@ -1,5 +1,7 @@
 #include "AutoControl.h"
 
+extern coords gPosi;
+
 PathTracking motion(FOLLOW_TANGENT); // 経路追従(接線方向向く)モードでとりあえず初期化
 
 AutoControl::AutoControl(){
@@ -21,7 +23,7 @@ coords AutoControl::pathTrackingMode(int mode, int state, int nextPhase){ // 軌
     int pathNum = getPathNum();
 
     if(motion.getMode() != mode) motion.setMode(mode);
-    int syusoku = motion.calcRefvel(gPosi.x, gPosi.y, gPosi.z); // 収束していれば　1　が返ってくる
+    int syusoku = motion.calcRefvel(); // 収束していれば　1　が返ってくる
     
     if(syusoku == 1){ // 収束して次の曲線へ
         if( pathNum <= state ){
@@ -107,16 +109,20 @@ void AutoControl::setMaxPathnum(int pathNum){
 }
 
 // このメソッドの中身はユーザーが書き換える必要あり
-coords AutoControl::getRefVel(swState){
+coords AutoControl::getRefVel(int swState){
     coords refV;
 
     // example >>>>>
     if( phase == 0 ){
-        refV = pathTrackingMode(FOLLOW_TANGENT, 7, 1);
+        refV = pathTrackingMode(FOLLOW_TANGENT, STATE0, 1);
     }else if( phase == 1 ){
-        refV = pathTrackingMode(FOLLOW_COMMAND, 8, 2);
+        refV = pathTrackingMode(FOLLOW_COMMAND, STATE1, 2);
     }else if( phase == 2 ){
-        switch( swState ){
+        // 位置制御でロボットの動作停止
+        refV = pathTrackingMode(POSITION_PID, STATE2, 3);
+
+        // センサを使ったりしてロボットの自己位置を補正するとき
+        /*switch( swState ){
         case 0b0000:
             commandMode_vel(0.0, 0.0, 0.0);
             break;
@@ -134,7 +140,7 @@ coords AutoControl::getRefVel(swState){
         default:
             commandMode_vel(0.0, 0.0, 0.0);
             break;
-        }
+        }*/
     }else{
         commandMode_vel(0.0, 0.0, 0.0);
     }

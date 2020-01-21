@@ -4,6 +4,9 @@
 // 編集：Miki Nakaone
 //-----------------------------------------
 
+#include "PathTracking.h"
+
+extern coords gPosi;
 
 PID posiPIDx(2.5, 0.0, 5.0, INT_TIME);
 PID posiPIDy(3.0, 0.0, 2.0, INT_TIME);
@@ -146,7 +149,7 @@ int PathTracking::calcRefvel(){
     if(init_done){
         if(path_num <= max_pathnum){ // パスが存在する場合は以下の処理を行う
             if(mode == FOLLOW_TANGENT || mode == FOLLOW_COMMAND){ // ベジエ曲線追従モード
-                calcRefpoint(gPosi.x, gPosi.y);
+                calcRefpoint();
 
                 double refVtan, refVper, refVrot;
                 if((acc_mode[path_num] == MODE_START || acc_mode[path_num] == MODE_START_STOP) && counter <= acc_count[path_num]){

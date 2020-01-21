@@ -9,9 +9,6 @@ struct coords{
     double z;
 };
 
-coords gPosi = {0.0, 0.0, 0.0};
-coords preGposi = {0.0, 0.0, 0.0};
-
 #define SERIAL_LPMSME1  Serial1
 #define SERIAL_ROBOCLAW Serial4
 #define SERIAL_LEONARDO Serial5
@@ -74,19 +71,19 @@ coords preGposi = {0.0, 0.0, 0.0};
 
 // フェーズ管理
 //#define STATE1      ( 10 )// スタートからゲルゲ受け渡しまで(0から数えて)
-#define STATE1_1    ( 7 )// ベジエTANGENTモード
-#define STATE1_2    ( 8 )// ベジエCOMMANDモード
-#define STATE1_3    ( 9 )// ベジエCOMMANDモード(フェーズの変更は収束判定ではなくリミットスイッチで)
-#define STATE1_4    ( 10 )// 使うか分からないけど
-#define STATE2      ( 14 )// ゲルゲ受け渡し後からシャガイ取得まで
-#define STATE3      ( 15 )// シャガイ取得後からスローイングゾーン待機まで
-#define STATE4      ( 17 )// 投擲位置まで移動
-#define STATE5      ( 20 )//( 19 )// 2個目のシャガイまで
-#define STATE6      ( 22 )//( 21 )// シャガイ取得後からスローイングゾーン待機まで
-#define STATE7      ( 25 )//( 23 )// 3個目のシャガイまで
-#define STATE8      ( 27 )//( 25 )// シャガイ取得後からスローイングゾーン待機まで
+//#define STATE1_1    ( 7 )// ベジエTANGENTモード
+//#define STATE1_2    ( 8 )// ベジエCOMMANDモード
+//#define STATE1_3    ( 9 )// ベジエCOMMANDモード(フェーズの変更は収束判定ではなくリミットスイッチで)
+//#define STATE1_4    ( 10 )// 使うか分からないけど
+//#define STATE2      ( 14 )// ゲルゲ受け渡し後からシャガイ取得まで
+//#define STATE3      ( 15 )// シャガイ取得後からスローイングゾーン待機まで
+//#define STATE4      ( 17 )// 投擲位置まで移動
+//#define STATE5      ( 20 )//( 19 )// 2個目のシャガイまで
+//#define STATE6      ( 22 )//( 21 )// シャガイ取得後からスローイングゾーン待機まで
+//#define STATE7      ( 25 )//( 23 )// 3個目のシャガイまで
+//#define STATE8      ( 27 )//( 25 )// シャガイ取得後からスローイングゾーン待機まで
 
-#define STATE_ALL   ( STATE1 + STATE2 + STATE3 + STATE4 )
+//#define STATE_ALL   ( STATE1 + STATE2 + STATE3 + STATE4 )
 
 // 上半身との通信
 // #define BIT_START   ( 0b10010000 ) // 0x90:最初に送る
