@@ -27,7 +27,7 @@ void Platform::platformInit(coords initPosi){
     stateamt203 = amt203.init();
 #endif
 
-    MD->begin(115200);
+    MD.begin(115200);
 
     Posi = initPosi;
 
