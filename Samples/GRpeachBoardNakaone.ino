@@ -11,10 +11,9 @@
 #include "Platform.h"
 #include "LCDclass.h"
 #include "Button.h"
-//#include "RoboClaw.h"
 
 #define SERIAL_LPMSME1  Serial1
-//#define SERIAL_ROBOCLAW Serial4
+#define SERIAL_ROBOCLAW Serial4
 #define SERIAL_LEONARDO Serial5
 #define SERIAL_LCD      Serial6
 #define SERIAL_XBEE     Serial7
@@ -22,6 +21,9 @@
 #define PIN_RESET 66
 #define INTERVAL 100
 #define PIN_CSB 10
+
+#define ADR_MD1             ( 128 )
+#define ADR_MD2             ( 129 )
 
 coords gPosi = {0.0, 0.0, 0.0};
 coords preGposi = {0.0, 0.0, 0.0};
@@ -38,9 +40,10 @@ mySDclass mySD;
 myLCDclass myLCD(&SERIAL_LCD);
 // RoboClaw
 //RoboClaw MD(&SERIAL_ROBOCLAW,1);//10);
+RoboClaw MD(&SERIAL_ROBOCLAW,1);
 
 AutoControl Auto;
-Platform platform;
+Platform platform(&MD);
 
 Button button_up(PIN_SW_UP);
 Button button_down(PIN_SW_DOWN);
@@ -175,7 +178,7 @@ void timer_warikomi(){
 
   // 自己位置推定用エンコーダのカウント値取得
   encX = -enc1.getCount();
-  encY =  enc2.getCount();
+  encY = enc2.getCount();
 
   angle_rad = (double)lpms.get_z_angle();
 
@@ -224,7 +227,7 @@ void setup()
 
   Serial.begin(115200);
   //Serial0.begin(115200);
-  //SERIAL_ROBOCLAW.begin(115200);
+  SERIAL_ROBOCLAW.begin(115200);
   SERIAL_LEONARDO.begin(115200);
   SERIAL_LCD.begin(115200);
   SERIAL_XBEE.begin(115200);
@@ -374,9 +377,10 @@ void setup()
     cmd = BIT_RED;
 
     actpathnum = Auto.init(&mySD, RED);//←mySD.path_read(RED, motion.Px  , motion.Py, motion.refvel, motion.refangle, motion.acc_mode, motion.acc_count, motion.dec_tbe);
+    Serial.print("path num: ");
     Serial.println(actpathnum);
 
-    if((button_state & 0x01)){
+    /*if((button_state & 0x01)){
       // 通常スタート
       Serial.println("Normal Start at RED zone");
       retry_num = 10;
@@ -387,7 +391,7 @@ void setup()
       Serial.println("Re-start at RED zone");
       retry_num = 11;
       phase = 100;
-    }
+    }*/
   }else{ // BLUE Field
     cmd = BIT_BLUE;
     
@@ -395,7 +399,7 @@ void setup()
     Serial.print("path num: ");
     Serial.println(actpathnum);
 
-    if(button_state & 0x01){
+    /*if(button_state & 0x01){
       // 通常スタート
       Serial.println("Normal Start at BLUE zone");
       retry_num = 0;
@@ -406,8 +410,11 @@ void setup()
       Serial.println("Re-start at BLUE zone");
       retry_num = 1;
       phase = 100;
-    }
+    }*/
   }
+
+  Auto.gPosiInit();
+  platform.platformInit(gPosi);
 
   myLCD.write_line("### SD-card Read ###", LINE_1);
   lcd_message = "PathNum:";
@@ -452,28 +459,22 @@ void setup()
 
   //Serial.println(motion.Px[0]);
 
-  // ↓autoで処理？
-  //motion.initSettings(); // これをやっていないと足回りの指令速度生成しない
-  //motion.setConvPara(0.02, 0.997); // 初期化
-  //motion.setMaxPathnum(actpathnum); // パス数の最大値
-
-
+  Auto.initSettings(); // これをやっていないと足回りの指令速度生成しない
+  Auto.setConvPara(0.02, 0.997); // 初期化
+  Auto.setMaxPathnum(actpathnum); // パス数の最大値
+  
   MsTimer2::set(10, timer_warikomi); // 10ms period
   MsTimer2::start();
 
   // 自己位置推定用のエンコーダ
   enc1.init();
   enc2.init();
-
-  Auto.gPosiInit();
-  platform.platformInit(gPosi);
 }
 
 
 void loop()
 {
   //static int dataCount = 0;
-
   int syusoku;
   static int wait_count = 0;
   static byte pre_buttonstate = 0;
@@ -484,14 +485,15 @@ void loop()
   char state = 0b00000000;
 
   if( flag_10ms ){
+    pathNum = Auto.getPathNum();
     preGposi = gPosi;
     //coords refV;
     int conv;
 
-    Auto.getRefVel();
+    refV = Auto.getRefVel();
     if( gPosi.x != preGposi.x || gPosi.y != preGposi.y || gPosi.z != preGposi.z ) platform.setPosi(gPosi);
     platform.VelocityControl(refV); // 目標速度に応じて，プラットフォームを制御
-
+    
     pre_buttonstate = pre_buttonstate<<1;
     pre_buttonstate &= 0x0F;
     pre_buttonstate |= !(buttonB>>3);
@@ -522,9 +524,9 @@ void loop()
 
   // 100msごとにLCDを更新する
   if(flag_100ms){
-    myLCD.write_double(gPosi.x, LINE_2, 3);
-    myLCD.write_double(gPosi.y, LINE_2, 12);
-    myLCD.write_double(gPosi.z, LINE_3, 6);
+    myLCD.write_double(refV.x, LINE_2, 3);//(gPosi.x, LINE_2, 3);
+    myLCD.write_double(refV.y, LINE_2, 12);//(gPosi.y, LINE_2, 12);
+    myLCD.write_double(refV.z, LINE_3, 6);//(gPosi.z, LINE_3, 6);
     myLCD.write_int(pathNum, LINE_4, 6);
     myLCD.write_int(phase, LINE_4, 16);
     

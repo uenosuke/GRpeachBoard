@@ -243,7 +243,7 @@ int PathTracking::calcRefvel(){
             // 収束していなかったら　0　を返す
             return 0;
         }else{
-            // path_num が設定されたmax_pathnumを超えたら　-2　を返す
+            // path_num が設定された max_pathnum を超えたら　-2　を返す
             return -2;
         }
     

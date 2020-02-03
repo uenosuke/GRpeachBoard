@@ -11,7 +11,7 @@
 
 RoboClaw MD(&SERIAL_ROBOCLAW,1);
 
-#if DRIVE_UNIT == PLATFORM_DUALCASTER
+#if DRIVE_UNIT == PLATFORM_DUALWHEEL
     AMT203V amt203(&SPI, PIN_CSB);
 #endif
 
@@ -21,19 +21,19 @@ Platform::Platform(){
 
 // 自己位置推定の初期化
 void Platform::platformInit(coords initPosi){
-#if DRIVE_UNIT == PLATFORM_DUALCASTER
+#if DRIVE_UNIT == PLATFORM_DUALWHEEL
     SPI.begin(); // ここでSPIをbeginしてあげないとちゃんと動かなかった
     SPI.setClockDivider(SPI_CLOCK_DIV16); //SPI通信のクロックを1MHzに設定 beginの後に置かないと，処理が止まる
     stateamt203 = amt203.init();
 #endif
 
-    MD.begin(115200);
+    MD->begin(115200);
 
     Posi = initPosi;
 
     preEncX = 0;
     preEncY = 0;
-    pre_angle_rad = Posi.z;
+    pre_angle_rad = 0.0;//Posi.z;
     init_done = true;
 }
 
@@ -72,7 +72,7 @@ coords Platform::getPosi(int encX, int encY, double angle_rad){
     return Posi;
 }
 
-int Platform::VelocityControl(coords refV){
+void Platform::VelocityControl(coords refV){
     if(init_done){
         #if DRIVE_UNIT == PLATFORM_OMNI3WHEEL
             double refOmegaA, refOmegaB, refOmegaC;
@@ -91,8 +91,10 @@ int Platform::VelocityControl(coords refV){
             MD.SpeedM1(ADR_MD1, (int)mdCmdA);// 右前
             MD.SpeedM2(ADR_MD1, (int)mdCmdB);// 左前
             MD.SpeedM2(ADR_MD2, (int)mdCmdC);// 右後
-        #elif DRIVE_UNIT == PLATFORM_DUALCASTER
+        #elif DRIVE_UNIT == PLATFORM_DUALWHEEL
             // ターンテーブルの角度取得
+            double thetaDuEnc, thetaDu;
+            static double  preThetaDuEnc = thetaDuEnc;
             thetaDuEnc = amt203.getEncount(); 
             if( thetaDuEnc == -1 ){
             thetaDuEnc = preThetaDuEnc; // -1はエラーなので，前の値を格納しておく
@@ -101,6 +103,7 @@ int Platform::VelocityControl(coords refV){
             thetaDu = (double)thetaDuEnc*2*PI / TT_RES4;	// 角度に変換
             
             // 車輪やターンテーブルの指令速度を計算
+            double cosDu, sinDu, refOmegaR, refOmegaL, refOmegaT;
             cosDu = cos(thetaDu);
             sinDu = sin(thetaDu);
             refOmegaR = ( ( cosDu - sinDu ) * refV.x + ( sinDu + cosDu ) * refV.y ) / RADIUS_R;// right

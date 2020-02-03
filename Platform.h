@@ -3,13 +3,6 @@
 
 #include "define.h"
 
-#define PLATFORM_MECHANUM      ( 0 )
-#define PLATFORM_OMNI4WHEEL    ( 1 )
-#define PLATFORM_OMNI3WHEEL    ( 2 )
-#define PLATFORM_DUALWHEEL     ( 3 )
-
-#define DRIVE_UNIT  ( PLATFORM_DUALWHEEL )
-
 #if DRIVE_UNIT == PLATFORM_DUALWHEEL
     // 双輪キャスター関連
     #define PIN_CSB     ( 10 )    // turntableのPIN(CSB)
@@ -53,7 +46,7 @@ public:
     void platformInit(coords);
     void setPosi(coords);
     coords getPosi(int, int, double);
-    int VelocityControl(coords);
+    void VelocityControl(coords);
 
 private:
     coords Posi;

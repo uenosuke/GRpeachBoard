@@ -3,10 +3,6 @@
 
 #include "define.h"
 
-#define JOY_DEADBAND    ( 5 )
-#define JOY_MAXVEL      ( 1.0 )
-#define JOY_MAXANGVEL   ( 2.5 )
-
 class ManualControl{
 public:
     /*********** 変数宣言 ***********/
