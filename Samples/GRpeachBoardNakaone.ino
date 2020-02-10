@@ -80,7 +80,6 @@ double tmpPosix = 0.0, tmpPosiy = 0.0, tmpPosiz = 0.0;
 
 // グローバル変数の設定
 coords refV = { 0.0, 0.0, 0.0 };
-//coords gPosi = { 0.0, 0.0, 0.0 };
 double angle_rad;
 const double _ANGLE_DEG = 45.0;
 
