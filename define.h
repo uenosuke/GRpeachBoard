@@ -21,6 +21,7 @@ struct coords{
 #define JOY_DEADBAND    ( 5 )
 #define JOY_MAXVEL      ( 1.0 )
 #define JOY_MAXANGVEL   ( 2.5 )
+#define MANUAL_LOWPASS_T  ( 0.25 )
 
 
 #define SERIAL_LPMSME1  Serial1
@@ -85,10 +86,6 @@ struct coords{
 #define STATE0  ( 7 )
 #define STATE1  ( 8 )
 #define STATE2  ( 9 )
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-// >>> ManualControlで使用 >>>>>>>>>>>>>>>>>>
-#define MANUAL_LOWPASS_T  ( 0.25 )
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 // >>> Platformで使用 >>>>>>>>>>>>>>>>>>>>>

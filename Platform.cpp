@@ -154,7 +154,7 @@ void Platform::VelocityControl(coords refV){
             mdCmdC = refOmegaC * _2RES_PI;
             mdCmdD = refOmegaD * _2RES_PI;
 
-            MD.SpeedM1(ADR_MD1, -(int)mdCmdA);// 右前
+            MD.SpeedM1(ADR_MD1,  (int)mdCmdA);// 右前
             MD.SpeedM2(ADR_MD1,  (int)mdCmdB);// 左前
             MD.SpeedM1(ADR_MD2,  (int)mdCmdC);// 右後
             MD.SpeedM2(ADR_MD2,  (int)mdCmdD);// 左後
