@@ -76,7 +76,7 @@ void Platform::VelocityControl(coords refV){
     if(init_done){
         #if DRIVE_UNIT == PLATFORM_OMNI3WHEEL
             double refOmegaA, refOmegaB, refOmegaC;
-
+            // 車輪反時計方向が正
             refOmegaA = (-refV.y - refV.z * DIST2WHEEL) / WHEEL_R * GEARRATIO;
             refOmegaB = ( refV.x*COS_PI_6 + refV.y*SIN_PI_6 - refV.z * DIST2WHEEL) / WHEEL_R * GEARRATIO;
             refOmegaC = (-refV.x*COS_PI_6 + refV.y*SIN_PI_6 - refV.z * DIST2WHEEL) / WHEEL_R * GEARRATIO;
@@ -91,6 +91,25 @@ void Platform::VelocityControl(coords refV){
             MD.SpeedM1(ADR_MD1, (int)mdCmdA);// 右前
             MD.SpeedM2(ADR_MD1, (int)mdCmdB);// 左前
             MD.SpeedM2(ADR_MD2, (int)mdCmdC);// 右後
+         #elif DRIVE_UNIT == PLATFORM_OMNI4WHEEL
+            double refOmegaA, refOmegaB, refOmegaC, refOmegaD;
+            // 車輪反時計方向が正
+            refOmegaA = ( refV.x * COS_PI_4 - refV.y * SIN_PI_4 - refV.z * DIST2WHEEL) / WHEEL_R * GEARRATIO; // [rad/s]
+            refOmegaB = ( refV.x * COS_PI_4 + refV.y * SIN_PI_4 - refV.z * DIST2WHEEL) / WHEEL_R * GEARRATIO;
+            refOmegaC = (-refV.x * COS_PI_4 + refV.y * SIN_PI_4 - refV.z * DIST2WHEEL) / WHEEL_R * GEARRATIO;
+            refOmegaD = (-refV.x * COS_PI_4 - refV.y * SIN_PI_4 - refV.z * DIST2WHEEL) / WHEEL_R * GEARRATIO;
+
+            // RoboClawの指令値に変換
+            double mdCmdA, mdCmdB, mdCmdC, mdCmdD;
+            mdCmdA = refOmegaA * _2RES_PI;
+            mdCmdB = refOmegaB * _2RES_PI;
+            mdCmdC = refOmegaC * _2RES_PI;
+            mdCmdD = refOmegaD * _2RES_PI;
+
+            MD.SpeedM1(ADR_MD1, (int)mdCmdA); // 左前 ①
+            MD.SpeedM2(ADR_MD1, (int)mdCmdC); // 左後 ②
+            MD.SpeedM1(ADR_MD2, (int)mdCmdD); // 右後 ③
+            MD.SpeedM2(ADR_MD2, (int)mdCmdB); // 右前 ④
         #elif DRIVE_UNIT == PLATFORM_DUALWHEEL
             // ターンテーブルの角度取得
             double thetaDuEnc, thetaDu;
@@ -121,6 +140,8 @@ void Platform::VelocityControl(coords refV){
             MD.SpeedM2(ADR_MD1,  (int)mdCmdL);// 左車輪
             MD.SpeedM1(ADR_MD2,  (int)mdCmdT);// ターンテーブル
         #elif DRIVE_UNIT == PLATFORM_MECHANUM
+            double refOmegaA, refOmegaB, refOmegaC, refOmegaD;
+            // RoboClawで使用しているエンコーダの軸まわりで見て，反時計方向が正
             refOmegaA = ( refV.x - refV.y - refV.z * ( MECANUM_HANKEI_D + MECANUM_HANKEI_L ) ) / MECANUM_HANKEI;// 左前
             refOmegaB = ( refV.x + refV.y - refV.z * ( MECANUM_HANKEI_D + MECANUM_HANKEI_L ) ) / MECANUM_HANKEI;// 左後
             refOmegaC = ( refV.x - refV.y + refV.z * ( MECANUM_HANKEI_D + MECANUM_HANKEI_L ) ) / MECANUM_HANKEI;// 右後

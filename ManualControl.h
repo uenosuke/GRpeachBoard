@@ -10,6 +10,7 @@ public:
     /*********** 関数宣言 ***********/
     ManualControl();
     
+    int init();
     coords getRefVel(unsigned int, unsigned int, unsigned int);
 
 private:

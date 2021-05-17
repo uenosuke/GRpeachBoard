@@ -15,7 +15,7 @@ struct coords{
 #define PLATFORM_OMNI3WHEEL    ( 2 )
 #define PLATFORM_DUALWHEEL     ( 3 )
 
-#define DRIVE_UNIT  ( PLATFORM_DUALWHEEL )
+#define DRIVE_UNIT  ( PLATFORM_OMNI4WHEEL )
 
 // ManualControlクラス用の定義
 #define JOY_DEADBAND    ( 5 )
@@ -80,19 +80,59 @@ struct coords{
 // 制御周期
 #define INT_TIME			( 0.01 )//( 0.001 )
 
+// >>> AutoControlで使用 >>>>>>>>>>>>>>>>>>
 // フェーズ管理
-//#define STATE1      ( 10 )// スタートからゲルゲ受け渡しまで(0から数えて)
-//#define STATE1_1    ( 7 )// ベジエTANGENTモード
-//#define STATE1_2    ( 8 )// ベジエCOMMANDモード
-//#define STATE1_3    ( 9 )// ベジエCOMMANDモード(フェーズの変更は収束判定ではなくリミットスイッチで)
-//#define STATE1_4    ( 10 )// 使うか分からないけど
-//#define STATE2      ( 14 )// ゲルゲ受け渡し後からシャガイ取得まで
-//#define STATE3      ( 15 )// シャガイ取得後からスローイングゾーン待機まで
-//#define STATE4      ( 17 )// 投擲位置まで移動
-//#define STATE5      ( 20 )//( 19 )// 2個目のシャガイまで
-//#define STATE6      ( 22 )//( 21 )// シャガイ取得後からスローイングゾーン待機まで
-//#define STATE7      ( 25 )//( 23 )// 3個目のシャガイまで
-//#define STATE8      ( 27 )//( 25 )// シャガイ取得後からスローイングゾーン待機まで
+#define STATE0  ( 7 )
+#define STATE1  ( 8 )
+#define STATE2  ( 9 )
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+// >>> ManualControlで使用 >>>>>>>>>>>>>>>>>>
+#define MANUAL_LOWPASS_T  ( 0.25 )
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+// >>> Platformで使用 >>>>>>>>>>>>>>>>>>>>>
+#if DRIVE_UNIT == PLATFORM_DUALWHEEL
+    // 双輪キャスター関連
+    #define PIN_CSB     ( 10 )    // turntableのPIN(CSB)
+    #define RADIUS_R    ( 0.04 )    // wheel radius
+    #define RADIUS_L    ( 0.04 )    // wheel radius
+    #define W           ( 0.265 )    // tread
+    #define GEARRATIO   ( 5.5 )
+    #define TT_RES4     ( 4096 )    // turntableの分解能
+    #define _2RES_PI    ( 2 * 2048 / 3.141592 ) // 駆動輪の角速度[rad/s]からRoboClawの指令値[pulses/s]に変換するための定数(2048はエンコーダ分解能) 4逓倍しているが，分母は元は2*piで，通分されている
+    #define _2RES_PI_T  ( 2 * 500 / 3.141592 ) //  ターンテーブルの角速度[rad/s]からRoboClawの指令値[pulses/s]に変換するための定数(500はエンコーダ分解能) 4逓倍しているが，分母は元は2*piで，通分されている
+#elif DRIVE_UNIT == PLATFORM_MECHANUM
+    // メカナム関連
+    #define MECANUM_HANKEI		( 0.05 )    //車輪半径
+    #define MECANUM_HANKEI_D	( 0.15561 ) //車両中心から車輪接地点までのY軸方向距離
+    #define MECANUM_HANKEI_L	( 0.26023 ) //車両中心から車輪接地点までのX軸方向距離
+    #define _2RES_PI  ( 2.0 * 2048 / PI ) //  駆動輪の角速度[rad/s]からRoboClawの指令値[pulses/s]に変換するための定数(2048はエンコーダ分解能) 4逓倍しているが，分母は元は2*piで，通分されている
+#elif DRIVE_UNIT == PLATFORM_OMNI3WHEEL  
+    #define WHEEL_R		( 0.019 )
+    #define DIST2WHEEL  ( 0.120 )
+    #define GEARRATIO   ( 51.45 )
+    #define COS_PI_6    ( 0.86602540378 )
+    #define SIN_PI_6    ( 0.5 )
+    #define _2RES_PI    ( 2.0 * 2048 / 3.141592 ) // 駆動輪の角速度[rad/s]からRoboClawの指令値[pulses/s]に変換するための定数(2048はエンコーダ分解能) 4逓倍しているが，分母は元は2*piで，通分されている
+#elif DRIVE_UNIT == PLATFORM_OMNI4WHEEL
+    #define WHEEL_R (0.0635)
+    #define DIST2WHEEL (0.421185)               //中心からホイールまでの距離
+    #define GEARRATIO   ( 1.0 )           // 車輪からエンコーダの計測軸までのギヤ比(1:1 なら 1)
+    #define COS_PI_4    ( 0.70711 )         // cos(pi/4)
+    #define SIN_PI_4    ( 0.70711 )         // sin(pi/4)
+    #define _2RES_PI (2.0 * 1024.0 / 3.141592 ) //  [rad/s]からRoboClawの指令値[pulses/s]に変換するための定数(1024はエンコーダ分解能) 4逓倍しているが，分母は元は2*piで，通分されている
+#endif
+
+// RoboClaw関連
+#define ADR_MD1             ( 128 )
+#define ADR_MD2             ( 129 )
+
+// 自己位置推定用エンコーダ関連
+#define _2PI_RES4   ( 2 * 3.141592 / 800 ) // res = 200
+#define RADIUS_X    ( 0.024 )
+#define RADIUS_Y    ( 0.024 )
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 //#define STATE_ALL   ( STATE1 + STATE2 + STATE3 + STATE4 )
 

@@ -5,10 +5,6 @@
 #include "define.h"
 #include "SDclass.h"
 
-#define STATE0  ( 7 )
-#define STATE1  ( 8 )
-#define STATE2  ( 9 )
-
 class AutoControl{
     public:
     AutoControl();

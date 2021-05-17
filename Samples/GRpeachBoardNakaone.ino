@@ -13,7 +13,6 @@
 #include "Button.h"
 
 #define SERIAL_LPMSME1  Serial1
-#define SERIAL_ROBOCLAW Serial4
 #define SERIAL_LEONARDO Serial5
 #define SERIAL_LCD      Serial6
 #define SERIAL_XBEE     Serial7
@@ -38,12 +37,9 @@ phaseCounter enc2(2);
 lpms_me1 lpms(&SERIAL_LPMSME1);
 mySDclass mySD;
 myLCDclass myLCD(&SERIAL_LCD);
-// RoboClaw
-//RoboClaw MD(&SERIAL_ROBOCLAW,1);//10);
-RoboClaw MD(&SERIAL_ROBOCLAW,1);
 
 AutoControl Auto;
-Platform platform(&MD);
+Platform platform;
 
 Button button_up(PIN_SW_UP);
 Button button_down(PIN_SW_DOWN);
@@ -84,7 +80,6 @@ double tmpPosix = 0.0, tmpPosiy = 0.0, tmpPosiz = 0.0;
 
 // グローバル変数の設定
 coords refV = { 0.0, 0.0, 0.0 };
-//coords gPosi = { 0.0, 0.0, 0.0 };
 double angle_rad;
 const double _ANGLE_DEG = 45.0;
 
@@ -226,8 +221,6 @@ void setup()
   String lcd_message = "";
 
   Serial.begin(115200);
-  //Serial0.begin(115200);
-  SERIAL_ROBOCLAW.begin(115200);
   SERIAL_LEONARDO.begin(115200);
   SERIAL_LCD.begin(115200);
   SERIAL_XBEE.begin(115200);
