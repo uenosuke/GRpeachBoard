@@ -9,7 +9,7 @@ AutoControl::AutoControl(){
 
 // SDのデータを読み込んで，PathTrackingの変数に格納
 int AutoControl::init(mySDclass* mySD, int FieldColor){
-    mySD->path_read(FieldColor, motion.Px  , motion.Py, motion.refvel, motion.refangle, motion.acc_mode, motion.acc_count, motion.dec_tbe);
+    mySD->path_read(FieldColor, motion.Px, motion.Py, motion.refvel, motion.refangle, motion.acc_mode, motion.acc_count, motion.dec_tbe);
 }
 
 void AutoControl::gPosiInit(){

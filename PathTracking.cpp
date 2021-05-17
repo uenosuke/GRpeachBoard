@@ -8,12 +8,12 @@
 
 extern coords gPosi;
 
-PID posiPIDx(2.5, 0.0, 5.0, INT_TIME);
-PID posiPIDy(3.0, 0.0, 2.0, INT_TIME);
-PID posiPIDz(4.0, 0.0, 0.0, INT_TIME);
+PID posiPIDx(POSI_X_KP, POSI_X_KI, POSI_X_KD, INT_TIME);
+PID posiPIDy(POSI_Y_KP, POSI_Y_KI, POSI_Y_KD, INT_TIME);
+PID posiPIDz(POSI_Z_KP, POSI_Z_KI, POSI_Z_KD, INT_TIME);
 
-PID yokozurePID(3.0, 0.0, 1.5, INT_TIME);//(3.0, 0.0, 0.0, INT_TIME);
-PID kakudoPID(5.0, 2.5, 0.0, INT_TIME);
+PID yokozurePID(YOKOZURE_KP, YOKOZURE_KI, YOKOZURE_KD, INT_TIME);//(3.0, 0.0, 0.0, INT_TIME);
+PID kakudoPID(KAKUDO_KP, KAKUDO_KI, KAKUDO_KD, INT_TIME);
 
 // 二次遅れ使えるようになる
 Filter sokduo_filter(INT_TIME);
@@ -40,9 +40,9 @@ PathTracking::PathTracking(int xmode){
 	
 	yokozurePID.PIDinit(0.0, 0.0);
 	kakudoPID.PIDinit(0.0, 0.0);
-
-	sokduo_filter.setSecondOrderPara(22.0, 1.0, 0.0);//(15.0, 1.0, 0.0);
-    kakudo_filter.setSecondOrderPara(10.0, 1.0, 0.0);//(7.0, 1.0, 0.0);
+    
+    sokduo_filter.setSecondOrderPara(FILT_SOKUDO_OMEGA, FILT_SOKUDO_DZETA, 0.0);//(15.0, 1.0, 0.0);
+    kakudo_filter.setSecondOrderPara(FILT_KAKUDO_OMEGA, FILT_KAKUDO_DZETA, 0.0);//(7.0, 1.0, 0.0);
    // angle = 2.35619;
 
     mode_changed = true;

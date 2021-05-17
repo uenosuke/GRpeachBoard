@@ -9,20 +9,6 @@ struct coords{
     double z;
 };
 
-// Platformの種類を設定
-#define PLATFORM_MECHANUM      ( 0 )
-#define PLATFORM_OMNI4WHEEL    ( 1 )
-#define PLATFORM_OMNI3WHEEL    ( 2 )
-#define PLATFORM_DUALWHEEL     ( 3 )
-
-#define DRIVE_UNIT  ( PLATFORM_OMNI4WHEEL )
-
-// ManualControlクラス用の定義
-#define JOY_DEADBAND    ( 5 )
-#define JOY_MAXVEL      ( 1.0 )
-#define JOY_MAXANGVEL   ( 2.5 )
-
-
 #define SERIAL_LPMSME1  Serial1
 #define SERIAL_ROBOCLAW Serial4
 #define SERIAL_LEONARDO Serial5
@@ -88,10 +74,50 @@ struct coords{
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 // >>> ManualControlで使用 >>>>>>>>>>>>>>>>>>
+#define JOY_DEADBAND    ( 5 )
+#define JOY_MAXVEL      ( 1.0 )
+#define JOY_MAXANGVEL   ( 2.5 )
 #define MANUAL_LOWPASS_T  ( 0.25 )
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+// >>> PathTrackingで使用 >>>>>>>>>>>>>>>>>>
+#define POSI_X_KP    ( 2.5 )
+#define POSI_X_KI    ( 0.0 )
+#define POSI_X_KD    ( 5.0 )
+
+#define POSI_Y_KP    ( 3.0 )
+#define POSI_Y_KI    ( 0.0 )
+#define POSI_Y_KD    ( 2.0 )
+
+#define POSI_Z_KP    ( 4.0 )
+#define POSI_Z_KI    ( 0.0 )
+#define POSI_Z_KD    ( 0.0 )
+
+#define YOKOZURE_KP    ( 3.0 )
+#define YOKOZURE_KI    ( 0.0 )
+#define YOKOZURE_KD    ( 1.5 )
+
+#define KAKUDO_KP    ( 4.0 )
+#define KAKUDO_KI    ( 0.0 )
+#define KAKUDO_KD    ( 0.0 )
+
+#define FILT_SOKUDO_OMEGA ( 22.0 )
+#define FILT_SOKUDO_DZETA ( 1.0 )
+
+#define FILT_KAKUDO_OMEGA ( 10.0 )
+#define FILT_KAKUDO_DZETA ( 1.0 )
+
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
 // >>> Platformで使用 >>>>>>>>>>>>>>>>>>>>>
+// Platformの種類を設定
+#define PLATFORM_MECHANUM      ( 0 )
+#define PLATFORM_OMNI4WHEEL    ( 1 )
+#define PLATFORM_OMNI3WHEEL    ( 2 )
+#define PLATFORM_DUALWHEEL     ( 3 )
+
+#define DRIVE_UNIT  ( PLATFORM_OMNI4WHEEL )
+
 #if DRIVE_UNIT == PLATFORM_DUALWHEEL
     // 双輪キャスター関連
     #define PIN_CSB     ( 10 )    // turntableのPIN(CSB)

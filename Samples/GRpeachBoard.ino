@@ -25,7 +25,7 @@ phaseCounter enc1(1);
 phaseCounter enc2(2);
 
 ManualControl controller;
-Platform platform;
+Platform platform(1, 1, 1, 1); // 括弧内の引数で回転方向を変えられる
 
 //AMT203V amt203(&SPI, PIN_CSB);
 lpms_me1 lpms(&SERIAL_LPMSME1);

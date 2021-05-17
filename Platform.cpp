@@ -15,7 +15,29 @@ RoboClaw MD(&SERIAL_ROBOCLAW,1);
     AMT203V amt203(&SPI, PIN_CSB);
 #endif
 
+Platform::Platform(int dir1 = 1, int dir2 = 1, int dir3 = 1, int dir4 = 1){
+    rotateDir[0] = (dir1 > 0) - (dir1 < 0); // 1より大きい数値だった場合に，1か-1にするための処理
+    rotateDir[1] = (dir2 > 0) - (dir2 < 0);
+    rotateDir[2] = (dir3 > 0) - (dir3 < 0);
+    rotateDir[3] = (dir4 > 0) - (dir4 < 0);
+
+    init_done = false;
+}
+
+Platform::Platform(int dir1 = 1, int dir2 = 1, int dir3 = 1){
+    rotateDir[0] = (dir1 > 0) - (dir1 < 0); // 1より大きい数値だった場合に，1か-1にするための処理
+    rotateDir[1] = (dir2 > 0) - (dir2 < 0);
+    rotateDir[2] = (dir3 > 0) - (dir3 < 0);
+    rotateDir[3] = 1;
+    init_done = false;
+}
+
 Platform::Platform(){
+    rotateDir[0] = 1; // 指示がないときはすべて1
+    rotateDir[1] = 1;
+    rotateDir[2] = 1;
+    rotateDir[3] = 1;
+
     init_done = false;
 }
 
@@ -88,9 +110,9 @@ void Platform::VelocityControl(coords refV){
             mdCmdC = refOmegaC * _2RES_PI;
 
             // モータにcmdを送り，回す
-            MD.SpeedM1(ADR_MD1, (int)mdCmdA);// 右前
-            MD.SpeedM2(ADR_MD1, (int)mdCmdB);// 左前
-            MD.SpeedM2(ADR_MD2, (int)mdCmdC);// 右後
+            MD.SpeedM1(ADR_MD1, (int)mdCmdA * rotateDir[0]);// 右前
+            MD.SpeedM2(ADR_MD1, (int)mdCmdB * rotateDir[1]);// 左前
+            MD.SpeedM2(ADR_MD2, (int)mdCmdC * rotateDir[2]);// 右後
          #elif DRIVE_UNIT == PLATFORM_OMNI4WHEEL
             double refOmegaA, refOmegaB, refOmegaC, refOmegaD;
             // 車輪反時計方向が正
@@ -106,10 +128,10 @@ void Platform::VelocityControl(coords refV){
             mdCmdC = refOmegaC * _2RES_PI;
             mdCmdD = refOmegaD * _2RES_PI;
 
-            MD.SpeedM1(ADR_MD1, (int)mdCmdA); // 左前 ①
-            MD.SpeedM2(ADR_MD1, (int)mdCmdC); // 左後 ②
-            MD.SpeedM1(ADR_MD2, (int)mdCmdD); // 右後 ③
-            MD.SpeedM2(ADR_MD2, (int)mdCmdB); // 右前 ④
+            MD.SpeedM1(ADR_MD1, (int)mdCmdA * rotateDir[0]); // 左前 ①
+            MD.SpeedM2(ADR_MD1, (int)mdCmdC * rotateDir[1]); // 左後 ②
+            MD.SpeedM1(ADR_MD2, (int)mdCmdD * rotateDir[2]); // 右後 ③
+            MD.SpeedM2(ADR_MD2, (int)mdCmdB * rotateDir[3]); // 右前 ④
         #elif DRIVE_UNIT == PLATFORM_DUALWHEEL
             // ターンテーブルの角度取得
             double thetaDuEnc, thetaDu;
@@ -154,10 +176,10 @@ void Platform::VelocityControl(coords refV){
             mdCmdC = refOmegaC * _2RES_PI;
             mdCmdD = refOmegaD * _2RES_PI;
 
-            MD.SpeedM1(ADR_MD1, -(int)mdCmdA);// 右前
-            MD.SpeedM2(ADR_MD1,  (int)mdCmdB);// 左前
-            MD.SpeedM1(ADR_MD2,  (int)mdCmdC);// 右後
-            MD.SpeedM2(ADR_MD2,  (int)mdCmdD);// 左後
+            MD.SpeedM1(ADR_MD1,  (int)mdCmdA * rotateDir[0]);// 右前
+            MD.SpeedM2(ADR_MD1,  (int)mdCmdB * rotateDir[1]);// 左前
+            MD.SpeedM1(ADR_MD2,  (int)mdCmdC * rotateDir[2]);// 右後
+            MD.SpeedM2(ADR_MD2,  (int)mdCmdD * rotateDir[3]);// 左後
         #endif
     }
 }

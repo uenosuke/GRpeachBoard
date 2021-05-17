@@ -8,6 +8,8 @@ public:
     /*********** 変数宣言 ***********/
 
     /*********** 関数宣言 ***********/
+    Platform(int, int, int, int);
+    Platform(int, int, int);
     Platform();
     void platformInit(coords);
     void setPosi(coords);
@@ -19,9 +21,7 @@ private:
     int preEncX, preEncY;
     double pre_angle_rad;
     bool init_done;
-    #if DRIVE_UNIT == PLATFORM_DUALWHEEL
-        int stateamt203;
-    #endif
+    int rotateDir[4];
 };
 
 #endif
