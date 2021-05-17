@@ -87,6 +87,10 @@ struct coords{
 #define STATE2  ( 9 )
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+// >>> ManualControlで使用 >>>>>>>>>>>>>>>>>>
+#define MANUAL_LOWPASS_T  ( 0.25 )
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
 // >>> Platformで使用 >>>>>>>>>>>>>>>>>>>>>
 #if DRIVE_UNIT == PLATFORM_DUALWHEEL
     // 双輪キャスター関連

@@ -241,6 +241,8 @@ void setup()
   enc1.init();
   enc2.init();
 
+  controller.init();
+
   platform.platformInit(gPosi);
 
   MsTimer2::set(10, timer_warikomi); // 10ms period

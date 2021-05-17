@@ -12,14 +12,16 @@ Filter velZ_filter(INT_TIME);
 
 ManualControl::ManualControl()
 {
-    velX_filter.setLowPassPara(0.25, 0.0);//ローパスフィルタのTと初期値を設定
-    velY_filter.setLowPassPara(0.25, 0.0);//ローパスフィルタのTと初期値を設定
-    velZ_filter.setLowPassPara(0.25, 0.0);//ローパスフィルタのTと初期値を設定
-
     anglePIDEnable = false;
 }
 
-
+int ManualControl::init()
+{
+  // コンストラクタでローパスフィルタの初期化ができなかったので修正 
+  velX_filter.setLowPassPara(MANUAL_LOWPASS_T, 0.0);//ローパスフィルタのTと初期値を設定
+  velY_filter.setLowPassPara(MANUAL_LOWPASS_T, 0.0);//ローパスフィルタのTと初期値を設定
+  velZ_filter.setLowPassPara(MANUAL_LOWPASS_T, 0.0);//ローパスフィルタのTと初期値を設定
+}
 
 coords ManualControl::getRefVel(unsigned int JoyX, unsigned int JoyY, unsigned int JoyZ)
 {
