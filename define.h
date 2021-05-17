@@ -15,7 +15,7 @@ struct coords{
 #define PLATFORM_OMNI3WHEEL    ( 2 )
 #define PLATFORM_DUALWHEEL     ( 3 )
 
-#define DRIVE_UNIT  ( PLATFORM_DUALWHEEL )
+#define DRIVE_UNIT  ( PLATFORM_OMNI4WHEEL )
 
 // ManualControlクラス用の定義
 #define JOY_DEADBAND    ( 5 )
@@ -96,21 +96,28 @@ struct coords{
     #define W           ( 0.265 )    // tread
     #define GEARRATIO   ( 5.5 )
     #define TT_RES4     ( 4096 )    // turntableの分解能
-    #define _2RES_PI    ( 2 * 2048 / 3.141592 ) // 駆動輪の角速度[rad/s]からRoboClawの指令値[pulses/s]に変換するための定数(2048はエンコーダ分解能)  
-    #define _2RES_PI_T  ( 2 * 500 / 3.141592 ) //  ターンテーブルの角速度[rad/s]からRoboClawの指令値[pulses/s]に変換するための定数(500はエンコーダ分解能)
+    #define _2RES_PI    ( 2 * 2048 / 3.141592 ) // 駆動輪の角速度[rad/s]からRoboClawの指令値[pulses/s]に変換するための定数(2048はエンコーダ分解能) 4逓倍しているが，分母は元は2*piで，通分されている
+    #define _2RES_PI_T  ( 2 * 500 / 3.141592 ) //  ターンテーブルの角速度[rad/s]からRoboClawの指令値[pulses/s]に変換するための定数(500はエンコーダ分解能) 4逓倍しているが，分母は元は2*piで，通分されている
 #elif DRIVE_UNIT == PLATFORM_MECHANUM
     // メカナム関連
     #define MECANUM_HANKEI		( 0.05 )    //車輪半径
-    #define MECANUM_HANKEI_D	( 0.15561 ) //車輪幅
-    #define MECANUM_HANKEI_L	( 0.26023 ) //前後幅
-    #define _2RES_PI  ( 2.0 * MECANUM_RES / PI ) //  駆動輪の角速度[rad/s]からRoboClawの指令値[pulses/s]に変換するための定数
-#elif DRIVE_UNIT == PLATFORM_OMNI3WHEEL
-    #define _2RES_PI    ( 2 * 3 / 3.141592 ) // 駆動輪の角速度[rad/s]からRoboClawの指令値[pulses/s]に変換するための定数  
+    #define MECANUM_HANKEI_D	( 0.15561 ) //車両中心から車輪接地点までのY軸方向距離
+    #define MECANUM_HANKEI_L	( 0.26023 ) //車両中心から車輪接地点までのX軸方向距離
+    #define _2RES_PI  ( 2.0 * 2048 / PI ) //  駆動輪の角速度[rad/s]からRoboClawの指令値[pulses/s]に変換するための定数(2048はエンコーダ分解能) 4逓倍しているが，分母は元は2*piで，通分されている
+#elif DRIVE_UNIT == PLATFORM_OMNI3WHEEL  
     #define WHEEL_R		( 0.019 )
     #define DIST2WHEEL  ( 0.120 )
     #define GEARRATIO   ( 51.45 )
     #define COS_PI_6    ( 0.86602540378 )
     #define SIN_PI_6    ( 0.5 )
+    #define _2RES_PI    ( 2.0 * 2048 / 3.141592 ) // 駆動輪の角速度[rad/s]からRoboClawの指令値[pulses/s]に変換するための定数(2048はエンコーダ分解能) 4逓倍しているが，分母は元は2*piで，通分されている
+#elif DRIVE_UNIT == PLATFORM_OMNI4WHEEL
+    #define WHEEL_R (0.0635)
+    #define DIST2WHEEL (0.421185)               //中心からホイールまでの距離
+    #define GEARRATIO   ( 1.0 )           // 車輪からエンコーダの計測軸までのギヤ比(1:1 なら 1)
+    #define COS_PI_4    ( 0.70711 )         // cos(pi/4)
+    #define SIN_PI_4    ( 0.70711 )         // sin(pi/4)
+    #define _2RES_PI (2.0 * 1024.0 / 3.141592 ) //  [rad/s]からRoboClawの指令値[pulses/s]に変換するための定数(1024はエンコーダ分解能) 4逓倍しているが，分母は元は2*piで，通分されている
 #endif
 
 // RoboClaw関連
