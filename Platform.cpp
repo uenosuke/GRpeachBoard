@@ -164,10 +164,10 @@ void Platform::VelocityControl(coords refV){
         #elif DRIVE_UNIT == PLATFORM_MECHANUM
             double refOmegaA, refOmegaB, refOmegaC, refOmegaD;
             // 車輪の軸まわりで見て，反時計方向が正
-            refOmegaA = ( refV.x - refV.y - refV.z * ( MECANUM_HANKEI_D + MECANUM_HANKEI_L ) ) / MECANUM_HANKEI;// 左前
-            refOmegaB = ( refV.x + refV.y - refV.z * ( MECANUM_HANKEI_D + MECANUM_HANKEI_L ) ) / MECANUM_HANKEI;// 左後
-            refOmegaC = (-refV.x + refV.y - refV.z * ( MECANUM_HANKEI_D + MECANUM_HANKEI_L ) ) / MECANUM_HANKEI;// 右後
-            refOmegaD = (-refV.x - refV.y - refV.z * ( MECANUM_HANKEI_D + MECANUM_HANKEI_L ) ) / MECANUM_HANKEI;// 右前
+            refOmegaA = ( refV.x - refV.y - refV.z * ( TREAD_2 + WHEELBASE_2 ) ) / WHEEL_R;// 左前
+            refOmegaB = ( refV.x + refV.y - refV.z * ( TREAD_2 + WHEELBASE_2 ) ) / WHEEL_R;// 左後
+            refOmegaC = (-refV.x + refV.y - refV.z * ( TREAD_2 + WHEELBASE_2 ) ) / WHEEL_R;// 右後
+            refOmegaD = (-refV.x - refV.y - refV.z * ( TREAD_2 + WHEELBASE_2 ) ) / WHEEL_R;// 右前
 
             // RoboClawの指令値に変換
             double mdCmdA, mdCmdB, mdCmdC, mdCmdD;
