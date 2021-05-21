@@ -129,9 +129,9 @@ struct coords{
     #define _2RES_PI_T  ( 2 * 500 / 3.141592 ) //  ターンテーブルの角速度[rad/s]からRoboClawの指令値[pulses/s]に変換するための定数(500はエンコーダ分解能) 4逓倍しているが，分母は元は2*piで，通分されている
 #elif DRIVE_UNIT == PLATFORM_MECHANUM
     // メカナム関連
-    #define MECANUM_HANKEI		( 0.05 )    //車輪半径
-    #define MECANUM_HANKEI_D	( 0.15561 ) //車両中心から車輪接地点までのY軸方向距離
-    #define MECANUM_HANKEI_L	( 0.26023 ) //車両中心から車輪接地点までのX軸方向距離
+    #define WHEEL_R		( 0.05 )    //車輪半径
+    #define TREAD_2 	( 0.15561 ) //車両中心から車輪接地点までのY軸方向距離(トレッド/2)
+    #define WHEELBASE_2	( 0.26023 ) //車両中心から車輪接地点までのX軸方向距離(ホイールベース/2)
     #define _2RES_PI  ( 2.0 * 2048 / PI ) //  駆動輪の角速度[rad/s]からRoboClawの指令値[pulses/s]に変換するための定数(2048はエンコーダ分解能) 4逓倍しているが，分母は元は2*piで，通分されている
 #elif DRIVE_UNIT == PLATFORM_OMNI3WHEEL  
     #define WHEEL_R		( 0.019 )
