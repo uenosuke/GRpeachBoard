@@ -163,11 +163,11 @@ void Platform::VelocityControl(coords refV){
             MD.SpeedM1(ADR_MD2,  (int)mdCmdT);// ターンテーブル
         #elif DRIVE_UNIT == PLATFORM_MECHANUM
             double refOmegaA, refOmegaB, refOmegaC, refOmegaD;
-            // RoboClawで使用しているエンコーダの軸まわりで見て，反時計方向が正
+            // 車輪の軸まわりで見て，反時計方向が正
             refOmegaA = ( refV.x - refV.y - refV.z * ( MECANUM_HANKEI_D + MECANUM_HANKEI_L ) ) / MECANUM_HANKEI;// 左前
             refOmegaB = ( refV.x + refV.y - refV.z * ( MECANUM_HANKEI_D + MECANUM_HANKEI_L ) ) / MECANUM_HANKEI;// 左後
-            refOmegaC = ( refV.x - refV.y + refV.z * ( MECANUM_HANKEI_D + MECANUM_HANKEI_L ) ) / MECANUM_HANKEI;// 右後
-            refOmegaD = ( refV.x + refV.y + refV.z * ( MECANUM_HANKEI_D + MECANUM_HANKEI_L ) ) / MECANUM_HANKEI;// 右前
+            refOmegaC = (-refV.x + refV.y - refV.z * ( MECANUM_HANKEI_D + MECANUM_HANKEI_L ) ) / MECANUM_HANKEI;// 右後
+            refOmegaD = (-refV.x - refV.y - refV.z * ( MECANUM_HANKEI_D + MECANUM_HANKEI_L ) ) / MECANUM_HANKEI;// 右前
 
             // RoboClawの指令値に変換
             double mdCmdA, mdCmdB, mdCmdC, mdCmdD;
