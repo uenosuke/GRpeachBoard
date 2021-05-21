@@ -106,7 +106,6 @@ struct coords{
 
 #define FILT_KAKUDO_OMEGA ( 10.0 )
 #define FILT_KAKUDO_DZETA ( 1.0 )
-
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 // >>> Platformで使用 >>>>>>>>>>>>>>>>>>>>>

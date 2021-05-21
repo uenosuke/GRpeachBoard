@@ -180,6 +180,7 @@ void Platform::VelocityControl(coords refV){
             MD.SpeedM2(ADR_MD1,  (int)mdCmdB * rotateDir[1]);// 左前
             MD.SpeedM1(ADR_MD2,  (int)mdCmdC * rotateDir[2]);// 右後
             MD.SpeedM2(ADR_MD2,  (int)mdCmdD * rotateDir[3]);// 左後
+
         #endif
     }
 }
