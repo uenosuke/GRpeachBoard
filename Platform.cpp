@@ -164,10 +164,10 @@ void Platform::VelocityControl(coords refV){
         #elif DRIVE_UNIT == PLATFORM_MECHANUM
             double refOmegaA, refOmegaB, refOmegaC, refOmegaD;
             // 車輪の軸まわりで見て，反時計方向が正
-            refOmegaA = ( refV.x - refV.y - refV.z * ( TREAD_2 + WHEELBASE_2 ) ) / WHEEL_R;// 左前
-            refOmegaB = ( refV.x + refV.y - refV.z * ( TREAD_2 + WHEELBASE_2 ) ) / WHEEL_R;// 左後
-            refOmegaC = (-refV.x + refV.y - refV.z * ( TREAD_2 + WHEELBASE_2 ) ) / WHEEL_R;// 右後
-            refOmegaD = (-refV.x - refV.y - refV.z * ( TREAD_2 + WHEELBASE_2 ) ) / WHEEL_R;// 右前
+            refOmegaA = ( refV.x + refV.y - refV.z * ( TREAD_2 + WHEELBASE_2 ) ) / WHEEL_R;// 左前
+            refOmegaB = ( refV.x - refV.y - refV.z * ( TREAD_2 + WHEELBASE_2 ) ) / WHEEL_R;// 左後
+            refOmegaC = (-refV.x - refV.y - refV.z * ( TREAD_2 + WHEELBASE_2 ) ) / WHEEL_R;// 右後
+            refOmegaD = (-refV.x + refV.y - refV.z * ( TREAD_2 + WHEELBASE_2 ) ) / WHEEL_R;// 右前
 
             // RoboClawの指令値に変換
             double mdCmdA, mdCmdB, mdCmdC, mdCmdD;
@@ -176,10 +176,10 @@ void Platform::VelocityControl(coords refV){
             mdCmdC = refOmegaC * _2RES_PI;
             mdCmdD = refOmegaD * _2RES_PI;
 
-            MD.SpeedM1(ADR_MD1,  (int)mdCmdA * rotateDir[0]);// 右前
-            MD.SpeedM2(ADR_MD1,  (int)mdCmdB * rotateDir[1]);// 左前
+            MD.SpeedM1(ADR_MD1,  (int)mdCmdA * rotateDir[0]);// 左前
+            MD.SpeedM2(ADR_MD1,  (int)mdCmdB * rotateDir[1]);// 左後
             MD.SpeedM1(ADR_MD2,  (int)mdCmdC * rotateDir[2]);// 右後
-            MD.SpeedM2(ADR_MD2,  (int)mdCmdD * rotateDir[3]);// 左後
+            MD.SpeedM2(ADR_MD2,  (int)mdCmdD * rotateDir[3]);// 右前
 
         #endif
     }
