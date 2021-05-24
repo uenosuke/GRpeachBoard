@@ -154,9 +154,9 @@ struct coords{
 #define ADR_MD2             ( 129 )
 
 // 自己位置推定用エンコーダ関連
-#define _2PI_RES4   ( 2 * 3.141592 / 800 ) // res = 200
-#define RADIUS_X    ( 0.024 )
-#define RADIUS_Y    ( 0.024 )
+#define _2PI_RES4   ( 2 * 3.141592 / 800 ) // res = 200 分母は res*4
+#define RADIUS_X    ( 0.024 ) // X軸計測輪の半径[m]
+#define RADIUS_Y    ( 0.024 ) // Y軸計測輪の半径[m]
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 //#define STATE_ALL   ( STATE1 + STATE2 + STATE3 + STATE4 )
