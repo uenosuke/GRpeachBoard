@@ -112,9 +112,30 @@ void AutoControl::setMaxPathnum(int pathNum){
 coords AutoControl::getRefVel(int swState){
     coords refV = {0.0, 0.0, 0.0};
 
-    // >>>>>
-    // edit here
+    // example of position PID >>>>>
+    if( phase == 0 ){
+        if(motion.getMode() != POSITION_PID) motion.setMode(POSITION_PID); // 強制的に位置PIDモードにする
+        motion.calcRefvel(); // 初期位置Px[0],Py[0]から，最終位置Px[3],Py[3],refangle[0]で位置PID制御
+        refV.x = motion.refVx; // 計算された値を代入
+        refV.y = motion.refVy;
+        refV.z = motion.refVz;
+    }else if(phase == 1){
+        motion.calcRefvel(); // 初期位置Px[3],Py[3]から，最終位置Px[6],Py[6],refangle[1]で位置PID制御
+        refV.x = motion.refVx; // 計算された値を代入
+        refV.y = motion.refVy;
+        refV.z = motion.refVz;
+    }
+    else if(phase == 2){
+        motion.calcRefvel(); // 初期位置Px[6],Py[6]から，最終位置Px[9],Py[9],refangle[2]で位置PID制御
+        refV.x = motion.refVx; // 計算された値を代入
+        refV.y = motion.refVy;
+        refV.z = motion.refVz;
+    }
     // <<<<<
+
+    }else{
+        refV = commandMode_vel(0.0, 0.0, 0.0); // 該当しない場合はとりあえず速度ゼロ
+    }
 
     return refV;
 }

@@ -192,15 +192,17 @@ int mySDclass::path_read(int field, double Px[], double Py[], double vel[], doub
       numd = 0;
       count++;
       //////////////////////////////////
-      while((tmpchar = myFile.read()) != '\r' && tmpchar != ';'){
+      while(((tmpchar = myFile.read()) != '\r' && tmpchar != ';') && tmpchar != '/'){
         tmpE[nume] = tmpchar;
         nume++;
       }
-      if(tmpchar == ';'){
+       if(tmpchar == ';'){
         file_end = true;
+      }else if(tmpchar == '/'){ // コメントアウト対応
+        while(tmpchar = myFile.read() != '\n');
       }else{
         myFile.read(); // "\n"を捨てるため
-      }
+      } 
       *tbe = str2double(tmpE, nume); //関数でdoubleに変換
       path_num++;
 

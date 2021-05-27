@@ -212,7 +212,7 @@ int PathTracking::calcRefvel(){
                     tmpPy = (Py[3 * path_num + 3]);
                 }
 
-                // PIDクラスを使って位置制御を行う(速度の指令地を得る)
+                // PIDクラスを使って位置制御を行う(速度の指令値を得る)
                 refVxg = posiPIDx.getCmd(tmpPx, gPosi.x, refvel[path_num]);//(Px[30], gPosix, refvel[phase]);
                 refVyg = posiPIDy.getCmd(tmpPy, gPosi.y, refvel[path_num]);//(Py[30], gPosiy, refvel[phase]);
                 refKakudo = kakudo_filter.SecondOrderLag(refangle[path_num]);
