@@ -30,7 +30,7 @@ int mySDclass::make_logfile(){
   int file_num = 0;
 
   while(!nameOK && file_num < 10000){
-    logFileName = "MR1_";
+    logFileName = "LOG_";
     if(file_num < 10){
       logFileName += "000";
       logFileName += String(file_num);

@@ -9,7 +9,7 @@ AutoControl::AutoControl(){
 
 // SDのデータを読み込んで，PathTrackingの変数に格納
 int AutoControl::init(mySDclass* mySD, int FieldColor){
-    mySD->path_read(FieldColor, motion.Px, motion.Py, motion.refvel, motion.refangle, motion.acc_mode, motion.acc_count, motion.dec_tbe);
+    return mySD->path_read(FieldColor, motion.Px, motion.Py, motion.refvel, motion.refangle, motion.acc_mode, motion.acc_count, motion.dec_tbe);
 }
 
 void AutoControl::gPosiInit(){
@@ -109,12 +109,18 @@ void AutoControl::setMaxPathnum(int pathNum){
 }
 
 // このメソッドの中身はユーザーが書き換える必要あり
-coords AutoControl::getRefVel(int swState){
+coords AutoControl::getRefVel(unsigned int swState){
     coords refV = {0.0, 0.0, 0.0};
+    static unsigned int pre_swState = swState;
 
-    // >>>>>
-    // edit here
+    // Edit here >>>>>
     // <<<<<
+
+    else{
+        refV = commandMode_vel(0.0, 0.0, 0.0); // 該当しない場合はとりあえず速度ゼロ
+    }
+
+    pre_swState = swState;
 
     return refV;
 }
