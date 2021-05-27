@@ -290,6 +290,10 @@ void loop()
     Serial.print(" ");
     Serial.print(refV.z);
     Serial.print(" ");
+    Serial.print(gPosi.x);
+    Serial.print(" ");
+    Serial.print(gPosi.y);
+    Serial.print(" ");
     Serial.println(gPosi.z);
     //SERIAL_XBEE.flush();
 
