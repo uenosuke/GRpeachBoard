@@ -103,6 +103,7 @@ private:
     int path_num;
     int mode;
     int max_pathnum;
+    int count_acc;
 
     double conv_length;
     double conv_tnum;
