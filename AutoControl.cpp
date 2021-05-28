@@ -115,7 +115,9 @@ coords AutoControl::getRefVel(unsigned int swState){
 
     // Edit here >>>>>
     // <<<<<
+    if(0){
 
+    }
     else{
         refV = commandMode_vel(0.0, 0.0, 0.0); // 該当しない場合はとりあえず速度ゼロ
     }

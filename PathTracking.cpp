@@ -31,6 +31,8 @@ PathTracking::PathTracking(int xmode){
     refVy = 0;
     refVz = 0;
 
+    count_acc = 0;
+
     mode = xmode;
 
     mode_changed = true;
@@ -143,7 +145,7 @@ void PathTracking::calcRefpoint(){
 int PathTracking::calcRefvel(){
     double refVxg, refVyg, refVzg; // グローバル座標系の指定速度
     double tmpPx, tmpPy;
-    static int counter = 0;
+    //static int counter = 0;
 
     if(init_done){
         if(path_num <= max_pathnum){ // パスが存在する場合は以下の処理を行う
@@ -151,9 +153,9 @@ int PathTracking::calcRefvel(){
                 calcRefpoint();
 
                 double refVtan, refVper, refVrot;
-                if((acc_mode[path_num] == MODE_START || acc_mode[path_num] == MODE_START_STOP) && counter <= acc_count[path_num]){
-                    counter++;
-                    refVtan = refvel[path_num] * counter/(double)acc_count[path_num];
+                if((acc_mode[path_num] == MODE_START || acc_mode[path_num] == MODE_START_STOP) && count_acc <= acc_count[path_num]){
+                    count_acc++;
+                    refVtan = refvel[path_num] * count_acc/(double)acc_count[path_num];
                 }else if(t_be < dec_tbe[path_num]){
                     refVtan = refvel[path_num];
                 }else if((acc_mode[path_num] == MODE_STOP || acc_mode[path_num] == MODE_START_STOP) && t_be >= dec_tbe[path_num]){
@@ -196,16 +198,16 @@ int PathTracking::calcRefvel(){
                     Py[3 * path_num] = gPosi.y;
                     posiPIDx.PIDinit(Px[3 * path_num], gPosi.x);	// ref, act
                     posiPIDy.PIDinit(Py[3 * path_num], gPosi.y);
-                    posiPIDz.PIDinit(refangle[path_num], gPosi.z);
+                    posiPIDz.PIDinit(refKakudo, gPosi.z);
                     kakudo_filter.initPrevData(refKakudo);
                     setRefKakudo();
                     mode_changed = false;
                 }
 
-                if(counter <= acc_count[path_num]){
-                    counter++;
-                    tmpPx = Px[3 * path_num] + (Px[3 * path_num + 3] - Px[3 * path_num]) * counter / (double)acc_count[path_num];
-                    tmpPy = Py[3 * path_num] + (Py[3 * path_num + 3] - Py[3 * path_num]) * counter / (double)acc_count[path_num];
+                if(count_acc <= acc_count[path_num]){
+                    count_acc++;
+                    tmpPx = Px[3 * path_num] + (Px[3 * path_num + 3] - Px[3 * path_num]) * count_acc / (double)acc_count[path_num];
+                    tmpPy = Py[3 * path_num] + (Py[3 * path_num + 3] - Py[3 * path_num]) * count_acc / (double)acc_count[path_num];
                 }else{
                     tmpPx = (Px[3 * path_num + 3]);
                     tmpPy = (Py[3 * path_num + 3]);
@@ -215,7 +217,7 @@ int PathTracking::calcRefvel(){
                 refVxg = posiPIDx.getCmd(tmpPx, gPosi.x, refvel[path_num]);//(Px[30], gPosix, refvel[phase]);
                 refVyg = posiPIDy.getCmd(tmpPy, gPosi.y, refvel[path_num]);//(Py[30], gPosiy, refvel[phase]);
                 refKakudo = kakudo_filter.SecondOrderLag(refangle[path_num]);
-                refVzg = posiPIDz.getCmd(refangle[path_num], gPosi.z, 1.57);//角速度に対してrefvelは遅すぎるから　refvel[path_num]);//(0.0, gPosiz, refvel[phase]);
+                refVzg = posiPIDz.getCmd(refKakudo, gPosi.z, 1.57);//角速度に対してrefvelは遅すぎるから　refvel[path_num]);//(0.0, gPosiz, refvel[phase]);
 
                 // 上記はグローバル座標系における速度のため，ローカルに変換
                 refVx =  refVxg * cos(gPosi.z) + refVyg * sin(gPosi.z);
@@ -228,13 +230,13 @@ int PathTracking::calcRefvel(){
             if(mode == FOLLOW_TANGENT || mode == FOLLOW_COMMAND){
                 // 軌道追従制御なら，到達位置からの距離とベジエ曲線の t のどちらかの条件
                 if(dist2goal <= conv_length || t_be >= conv_tnum){
-                    counter = 0;
+                    //counter = 0;
                     return 1;
                 }
             }if(mode == POSITION_PID){
                 // 位置制御なら，目標位置と角度両方を見る
                 if(dist2goal <= conv_length && fabs(refangle[path_num] - gPosi.z)){
-                    counter = 0;
+                    //counter = 0;
                     return 1;
                 }
             }
@@ -256,6 +258,7 @@ int PathTracking::calcRefvel(){
 void PathTracking::incrPathnum(double xconv_length, double xconv_tnum = 0.997){
     path_num++;
     pre_t_be = 0.1;
+    count_acc = 0;
     setConvPara(xconv_length, xconv_tnum);
 }
 
