@@ -33,18 +33,6 @@ PathTracking::PathTracking(int xmode){
 
     mode = xmode;
 
-    // PID関連初期化
-	posiPIDx.PIDinit(0.0, 0.0);
-	posiPIDy.PIDinit(0.0, 0.0);
-	posiPIDz.PIDinit(0.0, 0.0);
-	
-	yokozurePID.PIDinit(0.0, 0.0);
-	kakudoPID.PIDinit(0.0, 0.0);
-    
-    sokduo_filter.setSecondOrderPara(FILT_SOKUDO_OMEGA, FILT_SOKUDO_DZETA, 0.0);//(15.0, 1.0, 0.0);
-    kakudo_filter.setSecondOrderPara(FILT_KAKUDO_OMEGA, FILT_KAKUDO_DZETA, 0.0);//(7.0, 1.0, 0.0);
-   // angle = 2.35619;
-
     mode_changed = true;
     init_done = false;
 }
@@ -82,6 +70,17 @@ double PathTracking::dbezier_y(int p, double t)
 
 // ニュートン法のための係数の初期化
 void PathTracking::initSettings(){
+    // PID関連初期化
+	posiPIDx.PIDinit(0.0, 0.0);
+	posiPIDy.PIDinit(0.0, 0.0);
+	posiPIDz.PIDinit(0.0, 0.0);
+	
+	yokozurePID.PIDinit(0.0, 0.0);
+	kakudoPID.PIDinit(0.0, 0.0);
+    
+    sokduo_filter.setSecondOrderPara(FILT_SOKUDO_OMEGA, FILT_SOKUDO_DZETA, 0.0);//(15.0, 1.0, 0.0);
+    kakudo_filter.setSecondOrderPara(FILT_KAKUDO_OMEGA, FILT_KAKUDO_DZETA, 0.0);//(7.0, 1.0, 0.0);
+    
     for(int i = 0; i < PATHNUM; i++) {
         Ax[i] = Px[3*i+3] -3*Px[3*i+2] + 3*Px[3*i+1] - Px[3*i+0];
         Ay[i] = Py[3*i+3] -3*Py[3*i+2] + 3*Py[3*i+1] - Py[3*i+0];
