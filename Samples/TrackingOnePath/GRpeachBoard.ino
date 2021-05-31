@@ -136,8 +136,8 @@ void timer_warikomi(){
   double angle_rad;
   int encX, encY; // X,Y軸エンコーダのカウント値
   // 自己位置推定用エンコーダのカウント値取得
-  encX = -enc1.getCount();
-  encY =  enc2.getCount();
+  encX = enc1.getCount();
+  encY = enc2.getCount();
 
   // LPMS-ME1のから角度を取得
   angle_rad = (double)lpms.get_z_angle();
