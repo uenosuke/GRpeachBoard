@@ -14,11 +14,10 @@ class AutoControl{
     void calibrationGposi(double tempX, double tempY, double tempZ);
     coords commandMode_vel(double tempX, double tempY, double tempZ);
     void commandMode(int nextPhase, boolean next = true);
-    coords getRefVel(int swState = 0);
+    coords getRefVel(unsigned int swState = 0);
 
     int phase = 0;
-    int swState = 0;
-
+    
     // mainプログラムとPathTrackingの媒介的な
     double Px(int);
     double Py(int);

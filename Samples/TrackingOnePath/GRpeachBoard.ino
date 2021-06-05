@@ -1,7 +1,6 @@
-// 手動操作するためのサンプルプログラムです
-// Leonardo pro Micro とUSBホストシールドを使って，Elecomのゲームパッドの情報を取得します
-// ジョイスティックの状態に応じてロボットの速度を制御します
-// 編集者：小林(亮)
+// 位置PIDのサンプルプログラムです
+// Elecomのゲームパッドの情報を利用します
+// 作成日：2021年5月27日　作成者：ueno
 
 #include <Arduino.h>
 #include <MsTimer2.h>
@@ -11,24 +10,25 @@
 #include "phaseCounterPeach.h"
 #include "lpms_me1Peach.h"
 #include "SDclass.h"
-//#include "AutoControl.h"
+#include "AutoControl.h"
 #include "LCDclass.h"
 #include "Button.h"
 #include "ManualControl.h"
 #include "Platform.h"
 #include "RoboClaw.h"
-#include "Controller.h"
 
 phaseCounter enc1(1);
 phaseCounter enc2(2);
 
 ManualControl controller;
+AutoControl autonomous;
 Platform platform(1, 1, -1, -1); // 括弧内の引数で回転方向を変えられる
 
 //AMT203V amt203(&SPI, PIN_CSB);
 lpms_me1 lpms(&SERIAL_LPMSME1);
-mySDclass mySD;
 myLCDclass myLCD(&SERIAL_LCD);
+mySDclass mySD;
+bool SDwrite = false; // trueでSDカードに書き出し
 
 Button button_up(PIN_SW_UP);
 Button button_down(PIN_SW_DOWN);
@@ -41,10 +41,10 @@ Button dip2(PIN_DIP2);
 Button dip3(PIN_DIP3);
 Button dip4(PIN_DIP4);
 
-Controller CON;
-
 // グローバル変数の設定
 coords gPosi = {0.0, 0.0, 0.0};
+
+unsigned int ButtonState = 0, LJoyX = 127, LJoyY = 127, RJoyX = 127, RJoyY = 127; // コントローラデータ格納用
 
 bool flag_10ms = false; // loop関数で10msごとにシリアルプリントできるようにするフラグ
 bool flag_100ms = false;
@@ -65,6 +65,43 @@ void LEDblink(byte pin, int times, int interval){
     analogWrite(pin, 255);
     delay(interval);
     analogWrite(pin, 0);
+  }
+}
+
+// コントローラデータを取得する部分
+void controller_receive(){
+  static int recv_num = 0;
+  static int checksum = 0;
+  static char recv_msgs[9];
+  char c;
+  while(SERIAL_LEONARDO.available()){
+    c = SERIAL_LEONARDO.read();
+    if(c == '\n'){
+      if(recv_num == 9){// && (checksum & 0x3F == recv_msgs[recv_num-1] - 0x20)){
+        ButtonState = 0, LJoyX = 0, LJoyY = 0, RJoyX = 0, RJoyY = 0;
+        ButtonState |= recv_msgs[0] - 0x20;
+        ButtonState |= (recv_msgs[1] - 0x20) << 6;
+        ButtonState |= (recv_msgs[2] - 0x20) << 12;
+       
+        LJoyX |= (recv_msgs[3] - 0x20);
+        LJoyX |= ((recv_msgs[4] - 0x20) & 0x03) << 6;
+
+        LJoyY |= ((recv_msgs[4] - 0x20) & 0x3C) >> 2;
+        LJoyY |= ((recv_msgs[5] - 0x20) & 0x0F) << 4;
+
+        RJoyX |= ((recv_msgs[5] - 0x20) & 0x30) >> 4;
+        RJoyX |= ((recv_msgs[6] - 0x20) & 0x3F) << 2;
+
+        RJoyY |= (recv_msgs[7] - 0x20);
+        RJoyY |= ((recv_msgs[8] - 0x20) & 0x03) << 6;
+      }
+     recv_num = 0;
+     //checksum = 0;
+   }else{
+     recv_msgs[recv_num] = c; 
+     //checksum += recv_msgs[recv_num];
+     recv_num++;
+   }
   }
 }
 
@@ -129,10 +166,9 @@ void setup()
   String lcd_message = "";
 
   Serial.begin(115200);
-  //SERIAL_LEONARDO.begin(115200);
-  SERIAL_CON.begin(115200);
+  SERIAL_LEONARDO.begin(115200);
   SERIAL_LCD.begin(115200);
-  SERIAL_XBEE.begin(115200);
+  //SERIAL_XBEE.begin(115200);
   
   pinMode(PIN_XBEERESET, OUTPUT); // XBeeのリセット
   digitalWrite(PIN_XBEERESET, 0);
@@ -165,24 +201,27 @@ void setup()
   Serial.flush();
   
   // LCDに状態などを表示
-  myLCD.write_line("MANUAL MODE", LINE_1);
+  myLCD.write_line("AUTO MODE", LINE_1);
   myLCD.write_line("Sensors Initialized", LINE_2);
   
   mySD.init();
   delay(10);
   //Serial.println("Path reading ...");
   myLCD.write_line("SD-card initialized", LINE_3);
-  mySD.make_logfile();
+  if(SDwrite) mySD.make_logfile();
 
+  int actpathnum = autonomous.init(&mySD, BLUE);//←mySD.path_read(BLUE, motion->Px, motion.Py, motion.refvel, motion.refangle, motion.acc_mode, motion.acc_count, motion.dec_tbe);
+  Serial.print("path num: ");
+  Serial.println(actpathnum + 1);
+  autonomous.gPosiInit();
   LEDblink(PIN_LED_RED, 2, 100);
   
   myLCD.write_line(">> Push A Button <<", LINE_4);
   
   // コントローラの"A"ボタンが押されるまで待機
   while(!ready_to_start){
-    delay(10);
-    CON.update();
-    if(CON.readButton(BUTTON_RIGHT) == 2){
+    controller_receive();
+    if(ButtonState & BUTTON_A){
       ready_to_start = true;
     }
   }
@@ -203,8 +242,13 @@ void setup()
   enc2.init();
 
   controller.init();
-
   platform.platformInit(gPosi);
+  
+  autonomous.initSettings(); // これをやっていないと足回りの指令速度生成しない
+  autonomous.setConvPara(0.02, 0.997); // 初期化
+  autonomous.setMaxPathnum(actpathnum); // パス数の最大値
+
+  LEDblink(PIN_LED_GREEN, 2, 100);
 
   MsTimer2::set(10, timer_warikomi); // 10ms period
   MsTimer2::start();
@@ -212,35 +256,33 @@ void setup()
 
 void loop()
 {
+  controller_receive(); // コントローラ(Leonardo)からの受信
+
   // 10msに1回ピン情報を出力する
   if(flag_10ms){
-    CON.update(); // コントローラ(Leonardo)からの受信
     
-    coords refV = controller.getRefVel(CON.readJoyLXbyte(), CON.readJoyLYbyte(), CON.readJoyRYbyte()); // ジョイスティックの値から，目標速度を生成
+    // 位置制御させるための処理 >>>>
+    coords refV = autonomous.getRefVel(ButtonState); // 各目標点に対する位置決め動作を生成
     platform.VelocityControl(refV); // 目標速度に応じて，プラットフォームを制御
+    // <<<<
 
     // SDカードにログを吐く
-    String dataString = "";
-    static bool first_write = true;
-    if(first_write){
-      dataString += "gPosix,gPosiy,gPosiz,refVx,refVy,refVz";
+    if(SDwrite){
+      String dataString = "";
+      static bool first_write = true;
+      if(first_write){
+        dataString += "gPosix,gPosiy,gPosiz,refVx,refVy,refVz";
+        mySD.write_logdata(dataString);
+        first_write = false;
+        dataString = "";
+      }
+      dataString += String(gPosi.x, 4) + "," + String(gPosi.y, 4) + "," + String(gPosi.z, 4);
+      dataString += "," + String(refV.x, 4) + "," + String(refV.y, 4) + "," + String(refV.z, 4);
+
       mySD.write_logdata(dataString);
-      first_write = false;
-      dataString = "";
     }
-    dataString += String(gPosi.x, 4) + "," + String(gPosi.y, 4) + "," + String(gPosi.z, 4);
-    dataString += "," + String(refV.x, 4) + "," + String(refV.y, 4) + "," + String(refV.z, 4);
-
-    mySD.write_logdata(dataString);
-
     // シリアル出力する
-    Serial.print(CON.getButtonState(),BIN);
-    Serial.print(" ");
-    Serial.print(CON.readJoyLXbyte());
-    Serial.print(" ");
-    Serial.print(CON.readJoyLYbyte());
-    Serial.print(" ");
-    Serial.print(CON.readJoyRYbyte());
+    Serial.print(ButtonState,BIN);
     Serial.print(" ");
     Serial.print(refV.x);
     Serial.print(" ");
@@ -253,7 +295,7 @@ void loop()
     Serial.print(gPosi.y);
     Serial.print(" ");
     Serial.println(gPosi.z);
-    SERIAL_XBEE.flush();
+    //SERIAL_XBEE.flush();
 
     flag_10ms = false;
   }
