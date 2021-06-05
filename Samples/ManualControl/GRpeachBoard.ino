@@ -23,7 +23,7 @@
 phaseCounter enc1(1);
 phaseCounter enc2(2);
 
-ManualControl controller;
+ManualControl manualCon;
 Platform platform(1, 1, -1, -1); // 括弧内の引数で回転方向を変えられる
 
 //AMT203V amt203(&SPI, PIN_CSB);
@@ -130,10 +130,8 @@ void setup()
   String lcd_message = "";
 
   Serial.begin(115200);
-  //SERIAL_LEONARDO.begin(115200);
   SERIAL_CON.begin(115200);
   SERIAL_LCD.begin(115200);
-  SERIAL_XBEE.begin(115200);
   
   pinMode(PIN_XBEERESET, OUTPUT); // XBeeのリセット
   digitalWrite(PIN_XBEERESET, 0);
@@ -203,7 +201,7 @@ void setup()
   enc1.init();
   enc2.init();
 
-  controller.init();
+  manualCon.init();
 
   platform.platformInit(gPosi);
 
@@ -217,7 +215,7 @@ void loop()
   if(flag_10ms){
     CON.update(); // コントローラからの受信
     
-    coords refV = controller.getRefVel(CON.readJoyLXbyte(), CON.readJoyLYbyte(), CON.readJoyRYbyte()); // ジョイスティックの値から，目標速度を生成
+    coords refV = manualCon.getRefVel(CON.readJoyLXbyte(), CON.readJoyLYbyte(), CON.readJoyRYbyte()); // ジョイスティックの値から，目標速度を生成
     platform.VelocityControl(refV); // 目標速度に応じて，プラットフォームを制御
 
     // SDカードにログを吐く
@@ -236,12 +234,12 @@ void loop()
 
     // シリアル出力する
     Serial.print(CON.getButtonState(),BIN);
-    /*Serial.print(" ");
+    Serial.print(" ");
     Serial.print(CON.readJoyLXbyte());
     Serial.print(" ");
     Serial.print(CON.readJoyLYbyte());
     Serial.print(" ");
-    Serial.print(CON.readJoyRYbyte());*/
+    Serial.print(CON.readJoyRYbyte());
     Serial.print(" ");
     Serial.print(refV.x);
     Serial.print(" ");
@@ -254,8 +252,7 @@ void loop()
     Serial.print(gPosi.y);
     Serial.print(" ");
     Serial.println(gPosi.z);
-    SERIAL_XBEE.flush();
-
+    
     flag_10ms = false;
   }
 

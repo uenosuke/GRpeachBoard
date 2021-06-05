@@ -22,7 +22,7 @@
 phaseCounter enc1(1);
 phaseCounter enc2(2);
 
-ManualControl controller;
+ManualControl manualCom;
 AutoControl autonomous;
 Platform platform(1, 1, -1, -1); // 括弧内の引数で回転方向を変えられる
 
@@ -209,7 +209,7 @@ void setup()
   enc1.init();
   enc2.init();
 
-  controller.init();
+  manualCom.init();
   platform.platformInit(gPosi);
   
   autonomous.initSettings(); // これをやっていないと足回りの指令速度生成しない

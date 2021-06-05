@@ -11,9 +11,9 @@ struct coords{
 
 #define SERIAL_LPMSME1  Serial1
 #define SERIAL_ROBOCLAW Serial4
-#define SERIAL_CON      Serial5
+#define SERIAL_CON      Serial7
 #define SERIAL_LCD      Serial6
-#define SERIAL_XBEE     Serial7
+//#define SERIAL_XBEE     Serial7
 
 #define PIN_XBEERESET 66
 
@@ -141,8 +141,9 @@ struct coords{
 // >>> Controllerまわりで使用 >>>>>>>>>>>>>>>>>>>>>
 #define CON_ADACHI    ( 0 )
 #define CON_ELECOM    ( 1 )
+#define CON_DS4       ( 2 )
 
-#define CON_TYPE  ( CON_ELECOM )
+#define CON_TYPE  ( CON_DS4 )
 
 #if CON_TYPE == CON_ADACHI
     #define MASK_BUTTON_UP    0x01
@@ -162,7 +163,7 @@ struct coords{
     #define BUTTON_R2    6
     #define BUTTON_L1    7
     #define BUTTON_L2    8
-#elif CON_ELECOM
+#elif CON_TYPE == CON_ELECOM || CON_TYPE == CON_DS4
     #define MASK_BUTTON_X  0x0001
     #define MASK_BUTTON_Y  0x0002
     #define MASK_BUTTON_A  0x0004
@@ -173,6 +174,8 @@ struct coords{
     #define MASK_BUTTON_L2     0x0040
     #define MASK_BUTTON_R2     0x0080
 
+    #define MASK_BUTTON_PS     0x0100 // PS4のときはPSボタン
+    #define MASK_BUTTON_PAD    0x0200 // PS4のときはパッド
     #define MASK_BUTTON_JOY_L   0x0100
     #define MASK_BUTTON_JOY_R   0x0200
     #define MASK_BUTTON_BACK    0x0400

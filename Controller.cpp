@@ -8,18 +8,18 @@ Controller::Controller(){
 }
 
 void Controller::update(){
-  char checksum = 0x00, receive_data[8];
-  int loop_count=0;
+  char receive_data[10];
+  unsigned int loop_count=0, checksum = 0x00;
   comCheck = false;
 
-#if CON_TYPE == CON_ADACHI
+#if CON_TYPE == CON_ADACHI // 安達君開発のコントローラを使う場合の処理(どのコントローラを使うかはdefine.hで設定)
     while(loop_count < 10 && SERIAL_CON.available()){    
         if(serial_recieve() == '\n'){
             for(int i=0;i<8;i++) receive_data[i] = serial_recieve();
             for(int i=0;i<8;i++) receive_data[i] -= 0x20;
             for(int i=0;i<7;i++) checksum ^=receive_data[i];
 
-            if(receive_data[7] == checksum){
+            if(receive_data[7] == checksum & 0xFF){
                 comCheck = true;
                 
                 pre_conData.ButtonState = conData.ButtonState;
@@ -35,43 +35,81 @@ void Controller::update(){
         }
         loop_count++;
     }
-#elif CON_TYPE == CON_ELECOM
+#elif CON_TYPE == CON_ELECOM // ELECOMのコントローラを使う場合の処理(どのコントローラを使うかはdefine.hで設定)
     // コントローラデータを取得する部分
     static int recv_num = 0;
-    static char recv_msgs[9];
     char c;
     while(SERIAL_CON.available()){
         c = SERIAL_CON.read();
         if(c == '\n'){
-            if(recv_num == 9){// && (checksum & 0x3F == recv_msgs[recv_num-1] - 0x20)){
+            if(recv_num == 9){// チェックサムは無く，9個受信したら値を格納
                 pre_conData.ButtonState = conData.ButtonState;
 
                 conData.ButtonState = 0, conData.LJoyX = 0, conData.LJoyY = 0, conData.RJoyX = 0, conData.RJoyY = 0;
-                conData.ButtonState |= recv_msgs[0] - 0x20;
-                conData.ButtonState |= (recv_msgs[1] - 0x20) << 6;
-                conData.ButtonState |= (recv_msgs[2] - 0x20) << 12;
+                conData.ButtonState |= receive_data[0] - 0x20;
+                conData.ButtonState |= (receive_data[1] - 0x20) << 6;
+                conData.ButtonState |= (receive_data[2] - 0x20) << 12;
             
-                conData.LJoyX |= (recv_msgs[3] - 0x20);
-                conData.LJoyX |= ((recv_msgs[4] - 0x20) & 0x03) << 6;
+                conData.LJoyX |= (receive_data[3] - 0x20);
+                conData.LJoyX |= ((receive_data[4] - 0x20) & 0x03) << 6;
                 conData.LJoyX = abs(conData.LJoyX - 0xFF);
 
-                conData.LJoyY |= ((recv_msgs[4] - 0x20) & 0x3C) >> 2;
-                conData.LJoyY |= ((recv_msgs[5] - 0x20) & 0x0F) << 4;
+                conData.LJoyY |= ((receive_data[4] - 0x20) & 0x3C) >> 2;
+                conData.LJoyY |= ((receive_data[5] - 0x20) & 0x0F) << 4;
                 conData.LJoyY = abs(conData.LJoyY - 0xFF);
 
-                conData.RJoyX |= ((recv_msgs[5] - 0x20) & 0x30) >> 4;
-                conData.RJoyX |= ((recv_msgs[6] - 0x20) & 0x3F) << 2;
+                conData.RJoyX |= ((receive_data[5] - 0x20) & 0x30) >> 4;
+                conData.RJoyX |= ((receive_data[6] - 0x20) & 0x3F) << 2;
                 conData.RJoyX = abs(conData.RJoyX - 0xFF);
 
-                conData.RJoyY |= (recv_msgs[7] - 0x20);
-                conData.RJoyY |= ((recv_msgs[8] - 0x20) & 0x03) << 6;
+                conData.RJoyY |= (receive_data[7] - 0x20);
+                conData.RJoyY |= ((receive_data[8] - 0x20) & 0x03) << 6;
                 conData.RJoyY = abs(conData.RJoyY - 0xFF);
             }
             recv_num = 0;
-            //checksum = 0;
         }else{
-            recv_msgs[recv_num] = c; 
-            //checksum += recv_msgs[recv_num];
+            receive_data[recv_num] = c; 
+            recv_num++;
+        }
+    }
+#elif CON_TYPE == CON_DS4 // DualShock4を使う場合の処理(どのコントローラを使うかはdefine.hで設定)
+    // コントローラデータを取得する部分
+    static int recv_num = 0;
+    char c;
+    while(SERIAL_CON.available()){
+        c = SERIAL_CON.read();
+        if(c == '\n'){
+            if(recv_num == 10){ // データ数はチェックサム含めて10個(0~9)
+                checksum = 0;
+                for(int i = 0; i < 9; i++) checksum += (unsigned int)(receive_data[i] - 0x20); // チェックサムの計算
+                if((checksum & 0x3F) == (receive_data[9] - 0x20)){ // チェックサムの計算が合っていた場合のみ値を格納
+                    pre_conData.ButtonState = conData.ButtonState; // 立下り，立ち上がりの検知用にも必要
+
+                    conData.ButtonState = 0, conData.LJoyX = 0, conData.LJoyY = 0, conData.RJoyX = 0, conData.RJoyY = 0;
+                    conData.ButtonState |= receive_data[0] - 0x20;
+                    conData.ButtonState |= (receive_data[1] - 0x20) << 6;
+                    conData.ButtonState |= (receive_data[2] - 0x20) << 12;
+                
+                    conData.LJoyX |= (receive_data[3] - 0x20);
+                    conData.LJoyX |= ((receive_data[4] - 0x20) & 0x03) << 6;
+                    conData.LJoyX = abs(conData.LJoyX - 0xFF);
+
+                    conData.LJoyY |= ((receive_data[4] - 0x20) & 0x3C) >> 2;
+                    conData.LJoyY |= ((receive_data[5] - 0x20) & 0x0F) << 4;
+                    conData.LJoyY = abs(conData.LJoyY - 0xFF);
+
+                    conData.RJoyX |= ((receive_data[5] - 0x20) & 0x30) >> 4;
+                    conData.RJoyX |= ((receive_data[6] - 0x20) & 0x3F) << 2;
+                    conData.RJoyX = abs(conData.RJoyX - 0xFF);
+
+                    conData.RJoyY |= (receive_data[7] - 0x20);
+                    conData.RJoyY |= ((receive_data[8] - 0x20) & 0x03) << 6;
+                    conData.RJoyY = abs(conData.RJoyY - 0xFF);
+                }
+            }
+            recv_num = 0;
+        }else{
+            receive_data[recv_num] = c;
             recv_num++;
         }
     }
