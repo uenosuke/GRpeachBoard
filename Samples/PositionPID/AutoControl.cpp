@@ -91,7 +91,7 @@ double AutoControl::angle(){
 }
 
 double AutoControl::dist(){
-    return motion.dist;
+    return motion.dist; 
 }
 
 double AutoControl::refKakudo(){
@@ -116,7 +116,7 @@ coords AutoControl::getRefVel(unsigned int swState){
     // example of position PID >>>>>
     if( phase == 0 ){
         // ボタンが押されるまで待機
-        if((swState != pre_swState) && (swState & BUTTON_A == BUTTON_A)){ // Aボタンが押されたら最初の目的地へ
+        if((swState != pre_swState) && (swState & MASK_BUTTON_A == MASK_BUTTON_A)){ // Aボタンが押されたら最初の目的地へ
             if(motion.getMode() != POSITION_PID) motion.setMode(POSITION_PID); // 強制的に位置PIDモードにする
             motion.setConvPara(0.02, 0.997); // 次の位置へ．第1引数は収束半径，第2引数は収束したと判定するベジエ曲線のt値(位置制御では使わない)
             phase = 1;
@@ -127,7 +127,7 @@ coords AutoControl::getRefVel(unsigned int swState){
         refV.x = motion.refVx; // 計算された値を代入
         refV.y = motion.refVy;
         refV.z = motion.refVz;
-        if((syusoku == 1) && ((swState != pre_swState) && (swState & BUTTON_A == BUTTON_A))){ // Aボタンが押されたら次の目的地へ
+        if((syusoku == 1) && ((swState != pre_swState) && (swState & MASK_BUTTON_A == MASK_BUTTON_A))){ // Aボタンが押されたら次の目的地へ
             motion.incrPathnum(0.02, 0.997); // 次の位置へ．第1引数は収束半径，第2引数は収束したと判定するベジエ曲線のt値(位置制御では使わない)
             phase = 2;
         }
@@ -147,7 +147,7 @@ coords AutoControl::getRefVel(unsigned int swState){
         refV.x = motion.refVx; // 計算された値を代入
         refV.y = motion.refVy;
         refV.z = motion.refVz;
-        if((syusoku == 1) && ((swState != pre_swState) && (swState & BUTTON_B == BUTTON_B))){ // Bボタンが押されたら次の目的地へ
+        if((syusoku == 1) && ((swState != pre_swState) && (swState & MASK_BUTTON_B == MASK_BUTTON_B))){ // Bボタンが押されたら次の目的地へ
             motion.incrPathnum(0.02, 0.997); // 次の位置へ．第1引数は収束半径，第2引数は収束したと判定するベジエ曲線のt値(位置制御では使わない)
             motion.setPathNum(0); // 最初の目的地へ
             phase = 1; // 以降，繰り返し
