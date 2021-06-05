@@ -42,12 +42,6 @@ struct coords{
 
 #define PIN_CSB 10
 
-// Controllerの種類を設定
-#define CON_ADACHI    ( 0 )
-#define CON_ELECOM    ( 1 )
-
-#define CON_TYPE  ( CON_ELECOM )
-
 // 制御周期
 #define INT_TIME			( 0.01 )//( 0.001 )
 
@@ -144,6 +138,60 @@ struct coords{
 #define RADIUS_Y    ( 0.024 ) // Y軸計測輪の半径[m]
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-//#define STATE_ALL   ( STATE1 + STATE2 + STATE3 + STATE4 )
+// >>> Controllerまわりで使用 >>>>>>>>>>>>>>>>>>>>>
+#define CON_ADACHI    ( 0 )
+#define CON_ELECOM    ( 1 )
+
+#define CON_TYPE  ( CON_ELECOM )
+
+#if CON_TYPE == CON_ADACHI
+    #define MASK_BUTTON_UP    0x01
+    #define MASK_BUTTON_RIGHT 0x02
+    #define MASK_BUTTON_DOWN  0x04
+    #define MASK_BUTTON_LEFT  0x08
+    #define MASK_BUTTON_R1    0x10
+    #define MASK_BUTTON_R2    0x20
+    #define MASK_BUTTON_L1    0x40
+    #define MASK_BUTTON_L2    0x80
+
+    #define BUTTON_UP    1
+    #define BUTTON_RIGHT 2
+    #define BUTTON_DOWN  3
+    #define BUTTON_LEFT  4
+    #define BUTTON_R1    5
+    #define BUTTON_R2    6
+    #define BUTTON_L1    7
+    #define BUTTON_L2    8
+#elif CON_ELECOM
+    #define MASK_BUTTON_X  0x0001
+    #define MASK_BUTTON_Y  0x0002
+    #define MASK_BUTTON_A  0x0004
+    #define MASK_BUTTON_B  0x0008
+
+    #define MASK_BUTTON_L1     0x0010
+    #define MASK_BUTTON_R1     0x0020
+    #define MASK_BUTTON_L2     0x0040
+    #define MASK_BUTTON_R2     0x0080
+
+    #define MASK_BUTTON_JOY_L   0x0100
+    #define MASK_BUTTON_JOY_R   0x0200
+    #define MASK_BUTTON_BACK    0x0400
+    #define MASK_BUTTON_START   0x0800
+
+    #define MASK_BUTTON_UP     0x1000
+    #define MASK_BUTTON_RIGHT  0x2000
+    #define MASK_BUTTON_DOWN   0x4000
+    #define MASK_BUTTON_LEFT   0x8000
+
+    #define BUTTON_UP    12
+    #define BUTTON_RIGHT 13
+    #define BUTTON_DOWN  14
+    #define BUTTON_LEFT  15
+    #define BUTTON_R1    5
+    #define BUTTON_R2    7
+    #define BUTTON_L1    4
+    #define BUTTON_L2    6
+#endif
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 #endif

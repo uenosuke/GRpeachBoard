@@ -116,7 +116,7 @@ coords AutoControl::getRefVel(unsigned int swState){
     // example of position PID >>>>>
     if( phase == 0 ){
         // ボタンが押されるまで待機
-        if((swState != pre_swState) && (swState & BUTTON_A == BUTTON_A)){ // Aボタンが押されたら軌道追従開始
+        if((swState != pre_swState) && (swState & MASK_BUTTON_A == MASK_BUTTON_A)){ // Aボタンが押されたら軌道追従開始
             //motion.incrPathnum(0.02, 0.997); // 次の位置へ．第1引数は収束半径，第2引数は収束したと判定するベジエ曲線のt値(位置制御では使わない)
             phase = 1;
         }
@@ -131,7 +131,7 @@ coords AutoControl::getRefVel(unsigned int swState){
         refV.x = motion.refVx; // 計算された値を代入
         refV.y = motion.refVy;
         refV.z = motion.refVz;
-        if((syusoku == 1) && ((swState != pre_swState) && (swState & BUTTON_B == BUTTON_B))){ // 収束していて，かつBボタンが押されたら元の位置に向かって軌道追従
+        if((syusoku == 1) && ((swState != pre_swState) && (swState & MASK_BUTTON_B == MASK_BUTTON_B))){ // 収束していて，かつBボタンが押されたら元の位置に向かって軌道追従
             motion.incrPathnum(0.02, 0.997); // 次の位置へ．第1引数は収束半径，第2引数は収束したと判定するベジエ曲線のt値(位置制御では使わない)
             phase = 3;
         }
@@ -146,7 +146,7 @@ coords AutoControl::getRefVel(unsigned int swState){
         refV.x = motion.refVx; // 計算された値を代入
         refV.y = motion.refVy;
         refV.z = motion.refVz;
-        if((syusoku == 1) && ((swState != pre_swState) && (swState & BUTTON_A == BUTTON_A))){ // 収束していて，かつAボタンが押されたら1つ目の経路を追従
+        if((syusoku == 1) && ((swState != pre_swState) && (swState & MASK_BUTTON_A == MASK_BUTTON_A))){ // 収束していて，かつAボタンが押されたら1つ目の経路を追従
             motion.setPathNum(0); // pathNumを0(最初のパス)に変更
             motion.setConvPara(0.02, 0.997); // 次のパスへ．第1引数は収束半径，第2引数は収束したと判定するベジエ曲線のt値(位置制御では使わない)
             phase = 1;

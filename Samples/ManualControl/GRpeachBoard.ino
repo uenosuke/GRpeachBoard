@@ -8,16 +8,17 @@
 #include <SPI.h>
 
 #include "define.h"
-#include "phaseCounterPeach.h"
-#include "lpms_me1Peach.h"
-#include "SDclass.h"
+
 //#include "AutoControl.h"
-#include "LCDclass.h"
 #include "Button.h"
-#include "ManualControl.h"
-#include "Platform.h"
-#include "RoboClaw.h"
 #include "Controller.h"
+#include "LCDclass.h"
+#include "lpms_me1Peach.h"
+#include "ManualControl.h"
+#include "phaseCounterPeach.h"
+#include "Platform.h"
+#include "SDclass.h"
+#include "RoboClaw.h"
 
 phaseCounter enc1(1);
 phaseCounter enc2(2);
@@ -178,7 +179,7 @@ void setup()
   
   myLCD.write_line(">> Push A Button <<", LINE_4);
   
-  // コントローラの"A"ボタンが押されるまで待機
+  // コントローラの"右"ボタンが押されるまで待機
   while(!ready_to_start){
     delay(10);
     CON.update();
@@ -214,7 +215,7 @@ void loop()
 {
   // 10msに1回ピン情報を出力する
   if(flag_10ms){
-    CON.update(); // コントローラ(Leonardo)からの受信
+    CON.update(); // コントローラからの受信
     
     coords refV = controller.getRefVel(CON.readJoyLXbyte(), CON.readJoyLYbyte(), CON.readJoyRYbyte()); // ジョイスティックの値から，目標速度を生成
     platform.VelocityControl(refV); // 目標速度に応じて，プラットフォームを制御
@@ -235,12 +236,12 @@ void loop()
 
     // シリアル出力する
     Serial.print(CON.getButtonState(),BIN);
-    Serial.print(" ");
+    /*Serial.print(" ");
     Serial.print(CON.readJoyLXbyte());
     Serial.print(" ");
     Serial.print(CON.readJoyLYbyte());
     Serial.print(" ");
-    Serial.print(CON.readJoyRYbyte());
+    Serial.print(CON.readJoyRYbyte());*/
     Serial.print(" ");
     Serial.print(refV.x);
     Serial.print(" ");
