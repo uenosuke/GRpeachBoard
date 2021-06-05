@@ -36,7 +36,7 @@ coords ManualControl::getRefVel(unsigned int JoyX, unsigned int JoyY, unsigned i
       }else{
         joyraw += JOY_DEADBAND;
       }
-      rawV.x = -(joyraw)/(127.0 - (double)JOY_DEADBAND) * JOY_MAXVEL;
+      rawV.x = (joyraw)/(127.0 - (double)JOY_DEADBAND) * JOY_MAXVEL;
     }else{
       rawV.x = 0.0;
     }
@@ -49,7 +49,7 @@ coords ManualControl::getRefVel(unsigned int JoyX, unsigned int JoyY, unsigned i
       }else{
         joyraw += JOY_DEADBAND;
       }
-      rawV.y = -(joyraw)/(127.0 - (double)JOY_DEADBAND) * JOY_MAXVEL;
+      rawV.y = (joyraw)/(127.0 - (double)JOY_DEADBAND) * JOY_MAXVEL;
     }else{
       rawV.y = 0.0;
     }
@@ -62,7 +62,7 @@ coords ManualControl::getRefVel(unsigned int JoyX, unsigned int JoyY, unsigned i
       }else{
         joyraw += JOY_DEADBAND;
       }
-      rawV.z = -(joyraw)/(127.0 - (double)JOY_DEADBAND) * JOY_MAXANGVEL;
+      rawV.z = (joyraw)/(127.0 - (double)JOY_DEADBAND) * JOY_MAXANGVEL;
     }else{
       rawV.z = 0.0;
     }

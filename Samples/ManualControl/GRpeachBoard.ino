@@ -17,6 +17,7 @@
 #include "ManualControl.h"
 #include "Platform.h"
 #include "RoboClaw.h"
+#include "Controller.h"
 
 phaseCounter enc1(1);
 phaseCounter enc2(2);
@@ -40,10 +41,10 @@ Button dip2(PIN_DIP2);
 Button dip3(PIN_DIP3);
 Button dip4(PIN_DIP4);
 
+Controller CON;
+
 // グローバル変数の設定
 coords gPosi = {0.0, 0.0, 0.0};
-
-unsigned int ButtonState = 0, LJoyX = 127, LJoyY = 127, RJoyX = 127, RJoyY = 127; // コントローラデータ格納用
 
 bool flag_10ms = false; // loop関数で10msごとにシリアルプリントできるようにするフラグ
 bool flag_100ms = false;
@@ -64,43 +65,6 @@ void LEDblink(byte pin, int times, int interval){
     analogWrite(pin, 255);
     delay(interval);
     analogWrite(pin, 0);
-  }
-}
-
-// コントローラデータを取得する部分
-void controller_receive(){
-  static int recv_num = 0;
-  static int checksum = 0;
-  static char recv_msgs[9];
-  char c;
-  while(SERIAL_LEONARDO.available()){
-    c = SERIAL_LEONARDO.read();
-    if(c == '\n'){
-      if(recv_num == 9){// && (checksum & 0x3F == recv_msgs[recv_num-1] - 0x20)){
-        ButtonState = 0, LJoyX = 0, LJoyY = 0, RJoyX = 0, RJoyY = 0;
-        ButtonState |= recv_msgs[0] - 0x20;
-        ButtonState |= (recv_msgs[1] - 0x20) << 6;
-        ButtonState |= (recv_msgs[2] - 0x20) << 12;
-       
-        LJoyX |= (recv_msgs[3] - 0x20);
-        LJoyX |= ((recv_msgs[4] - 0x20) & 0x03) << 6;
-
-        LJoyY |= ((recv_msgs[4] - 0x20) & 0x3C) >> 2;
-        LJoyY |= ((recv_msgs[5] - 0x20) & 0x0F) << 4;
-
-        RJoyX |= ((recv_msgs[5] - 0x20) & 0x30) >> 4;
-        RJoyX |= ((recv_msgs[6] - 0x20) & 0x3F) << 2;
-
-        RJoyY |= (recv_msgs[7] - 0x20);
-        RJoyY |= ((recv_msgs[8] - 0x20) & 0x03) << 6;
-      }
-     recv_num = 0;
-     //checksum = 0;
-   }else{
-     recv_msgs[recv_num] = c; 
-     //checksum += recv_msgs[recv_num];
-     recv_num++;
-   }
   }
 }
 
@@ -135,8 +99,8 @@ void timer_warikomi(){
   double angle_rad;
   int encX, encY; // X,Y軸エンコーダのカウント値
   // 自己位置推定用エンコーダのカウント値取得
-  encX = -enc1.getCount();
-  encY =  enc2.getCount();
+  encX = enc1.getCount();
+  encY = enc2.getCount();
 
   // LPMS-ME1のから角度を取得
   angle_rad = (double)lpms.get_z_angle();
@@ -165,7 +129,8 @@ void setup()
   String lcd_message = "";
 
   Serial.begin(115200);
-  SERIAL_LEONARDO.begin(115200);
+  //SERIAL_LEONARDO.begin(115200);
+  SERIAL_CON.begin(115200);
   SERIAL_LCD.begin(115200);
   SERIAL_XBEE.begin(115200);
   
@@ -215,8 +180,9 @@ void setup()
   
   // コントローラの"A"ボタンが押されるまで待機
   while(!ready_to_start){
-    controller_receive();
-    if(ButtonState & BUTTON_A){
+    delay(10);
+    CON.update();
+    if(CON.readButton(BUTTON_RIGHT) == 2){
       ready_to_start = true;
     }
   }
@@ -246,12 +212,11 @@ void setup()
 
 void loop()
 {
-  controller_receive(); // コントローラ(Leonardo)からの受信
-
   // 10msに1回ピン情報を出力する
   if(flag_10ms){
+    CON.update(); // コントローラ(Leonardo)からの受信
     
-    coords refV = controller.getRefVel(LJoyX, LJoyY, RJoyY); // ジョイスティックの値から，目標速度を生成
+    coords refV = controller.getRefVel(CON.readJoyLXbyte(), CON.readJoyLYbyte(), CON.readJoyRYbyte()); // ジョイスティックの値から，目標速度を生成
     platform.VelocityControl(refV); // 目標速度に応じて，プラットフォームを制御
 
     // SDカードにログを吐く
@@ -269,7 +234,13 @@ void loop()
     mySD.write_logdata(dataString);
 
     // シリアル出力する
-    Serial.print(ButtonState,BIN);
+    Serial.print(CON.getButtonState(),BIN);
+    Serial.print(" ");
+    Serial.print(CON.readJoyLXbyte());
+    Serial.print(" ");
+    Serial.print(CON.readJoyLYbyte());
+    Serial.print(" ");
+    Serial.print(CON.readJoyRYbyte());
     Serial.print(" ");
     Serial.print(refV.x);
     Serial.print(" ");
