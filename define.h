@@ -11,8 +11,10 @@ struct coords{
 
 #define SERIAL_LPMSME1  Serial1
 #define SERIAL_ROBOCLAW Serial4
-#define SERIAL_CON      Serial7
+#define SERIAL_CON      Serial5
+// #define SERIAL_CON      Serial7 // XBeeからコントローラデータを受信する場合
 #define SERIAL_LCD      Serial6
+#define SERIAL_M5STACK  Serial6
 //#define SERIAL_XBEE     Serial7
 
 #define PIN_XBEERESET 66
@@ -143,7 +145,7 @@ struct coords{
 #define CON_ELECOM    ( 1 )
 #define CON_DS4       ( 2 )
 
-#define CON_TYPE  ( CON_DS4 )
+#define CON_TYPE  ( CON_ELECOM )
 
 #if CON_TYPE == CON_ADACHI
     #define MASK_BUTTON_UP    0x01

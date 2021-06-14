@@ -46,8 +46,9 @@ Controller CON;
 
 // グローバル変数の設定
 coords gPosi = {0.0, 0.0, 0.0};
+coords refV = {0.0, 0.0, 0.0};
 
-unsigned int ButtonState = 0, LJoyX = 127, LJoyY = 127, RJoyX = 127, RJoyY = 127; // コントローラデータ格納用
+//unsigned int ButtonState = 0, LJoyX = 127, LJoyY = 127, RJoyX = 127, RJoyY = 127; // コントローラデータ格納用
 
 unsigned int robotState = 0; // ロボットの状態
 #define STATE_LPMS_ENABLE 0x01
@@ -120,8 +121,8 @@ void timer_warikomi(){
 
 // エラーが発生したら無限ループで停止
 void error_stop(){
-  myLCD.clear_display();
-  myLCD.write_line("     !ERROR!", LINE_1);
+  //myLCD.clear_display();
+  //myLCD.write_line("     !ERROR!", LINE_1);
   while(1){
     analogWrite(PIN_LED_RED, 255);
     analogWrite(PIN_LED_BLUE, 0);
@@ -133,58 +134,61 @@ void error_stop(){
 }
 
 void send_state(){
-  uint8_t checksum = 0;
+  unsigned int checksum = 0;
   char sendStr[25] = {0};
   int sendaData[6] = { (int)(gPosi.x * 100),  (int)(gPosi.y * 100),  (int)(gPosi.z * 100), (int)(refV.x * 100),  (int)(refV.y * 100),  (int)(refV.z * 100)};
-  bool flaxMinus[6] = {0};
+  bool flagMinus[6] = {0};
 
   for(int i = 0; i < 6; i++){
     if(sendaData[i] < 0){
       flagMinus[i] = true;
-      sendaData[i] = abs(sendaData);
+      sendaData[i] = abs(sendaData[i]);
     }
   }
+  sendStr[0] = 0; // ゼロで状態送信を指定
+  sendStr[1] = robotState;
+  sendStr[2] = sendaData[0] & 0x3F;
+  sendStr[3] = ( sendaData[0] >> 6 ) & 0x1F;
+  if(flagMinus[0]) sendStr[3] |= 0x20;
 
-  sendStr[0] = robotState;
-  sendStr[1] = sendaData[0] & 0x3F;
-  sendStr[2] = ( sendaData[0] >> 6 ) & 0x1F;
-  if(flagMinus[0]) sendStr[2] |= 0x20;
-
-  sendStr[3] = sendaData[1] & 0x3F;
-  sendStr[4] = ( sendaData[1] >> 6 ) & 0x1F;
-  if(flagMinus[1]) sendStr[4] |= 0x20;
+  sendStr[4] = sendaData[1] & 0x3F;
+  sendStr[5] = ( sendaData[1] >> 6 ) & 0x1F;
+  if(flagMinus[1]) sendStr[6] |= 0x20;
   
-  sendStr[5] = sendaData[2] & 0x3F;
-  sendStr[6] = ( sendaData[2] >> 6 ) & 0x1F;
-  if(flagMinus[2]) sendStr[6] |= 0x20;
+  sendStr[7] = sendaData[2] & 0x3F;
+  sendStr[7] = ( sendaData[2] >> 6 ) & 0x1F;
+  if(flagMinus[2]) sendStr[7] |= 0x20;
 
-  sendStr[7] = sendaData[3] & 0x3F;
-  sendStr[8] = ( sendaData[3] >> 6 ) & 0x1F;
-  if(flagMinus[3]) sendStr[8] |= 0x20;
+  sendStr[8] = sendaData[3] & 0x3F;
+  sendStr[9] = ( sendaData[3] >> 6 ) & 0x1F;
+  if(flagMinus[3]) sendStr[9] |= 0x20;
   
-  sendStr[9] = sendaData[4] & 0x3F;
-  sendStr[10] = ( sendaData[4] >> 6 ) & 0x1F;
-  if(flagMinus[4]) sendStr[10] |= 0x20;
+  sendStr[10] = sendaData[4] & 0x3F;
+  sendStr[11] = ( sendaData[4] >> 6 ) & 0x1F;
+  if(flagMinus[4]) sendStr[11] |= 0x20;
   
-  sendStr[11] = sendaData[5] & 0x3F;
-  sendStr[12] = ( sendaData[5] >> 6 ) & 0x1F;
-  if(flagMinus[5]) sendStr[12] |= 0x20;
+  sendStr[12] = sendaData[5] & 0x3F;
+  sendStr[13] = ( sendaData[5] >> 6 ) & 0x1F;
+  if(flagMinus[5]) sendStr[13] |= 0x20;
 
-  sendStr[13] = (LJoyX * 0.247) & 0x3F;
-  sendStr[14] = (LJoyY * 0.247) & 0x3F;
-  sendStr[15] = (RJoyX * 0.247) & 0x3F;
-  sendStr[16] = (RJoyY * 0.247) & 0x3F;
+  sendStr[14] = (int)(CON.readJoyLXbyte() * 0.247) & 0x3F;
+  sendStr[15] = (int)(CON.readJoyLYbyte() * 0.247) & 0x3F;
+  sendStr[16] = (int)(CON.readJoyRXbyte() * 0.247) & 0x3F;
+  sendStr[17] = (int)(CON.readJoyRYbyte() * 0.247) & 0x3F;
   
-  sendStr[17] = ButtonState & 0x3F;
-  sendStr[18] = (ButtonState >> 6) & 0x3F;
-  sendStr[19] = (ButtonState >> 12) & 0x3F; // ここはボタン数によって書き換える
+  unsigned int ButtonState = CON.getButtonState(); // コントローラデータ格納用
+  sendStr[18] = ButtonState & 0x3F;
+  sendStr[19] = (ButtonState >> 6) & 0x3F;
+  sendStr[20] = (ButtonState >> 12) & 0x3F; // ここはボタン数によって書き換える
 
-  for(int i = 0; i < 20; i++){
-    Serial2.write(sendStr[i] + 0x20);
-    checksum ^= sendStr[i];
+  for(int i = 0; i < 21; i++){
+    checksum += (unsigned int)sendStr[i];
+    SERIAL_M5STACK.write(sendStr[i] + 0x20);
   }
-  Serial2.print(checksum);  
-  Serial2.print("\n");
+  sendStr[20] = (char)checksum & 0x3F;
+  SERIAL_M5STACK.write(sendStr[20] + 0x20);
+  //SERIAL_M5STACK.write((checksum & 0x3F) + 0x20);  
+  SERIAL_M5STACK.print("\n");
 }
 
 void setup()
@@ -219,10 +223,16 @@ void setup()
   if(lpms.init() != 1) error_stop(); // 理由はわからないが，これをやる前にLEDblinkかanalogWriteを実行していないと初期化できない
   robotState |= STATE_LPMS_ENABLE;
   LEDblink(PIN_LED_BLUE, 2, 100);  // 初期化が終わった証拠にブリンク
+  SERIAL_M5STACK.println("!LPMS-ME1 init done!");
   Serial.println("LPMS-ME1 init done!");
   Serial.flush();
   
-  if(mySD.init() == 0) robotState |= STATE_SD_INIT;
+  if(mySD.init() == 0){
+    robotState |= STATE_SD_INIT;
+    SERIAL_M5STACK.println("!SD-card init done!");
+  }else{
+    SERIAL_M5STACK.println("!SD-card init failed!!!");
+  }
   delay(10);
   //Serial.println("Path reading ...");
   if(SDwrite){
@@ -236,16 +246,18 @@ void setup()
   autonomous.gPosiInit();
   LEDblink(PIN_LED_RED, 2, 100);
   
-  robotState |= STATE_WAIT_INPUT;
+  //robotState |= STATE_WAIT_INPUT;
+  SERIAL_M5STACK.println("!Waiting controller input");
   
   // コントローラの"右"ボタンが押されるまで待機
-  while(robotState & STATE_READY == 0){
+  while((robotState & STATE_READY) == 0){
     delay(10);
     CON.update();
     if(CON.readButton(BUTTON_RIGHT) == 2){
-      robotState &= ~STATE_WAIT_INPUT;
+      //robotState &= ~STATE_WAIT_INPUT;
       robotState |= STATE_READY;
       //ready_to_start = true;
+      SERIAL_M5STACK.println("!READY TO GO !!!!!!!!!!");
     }
   }
 
@@ -284,7 +296,7 @@ void loop()
     CON.update(); // コントローラからの受信
     
     // 位置制御させるための処理 >>>>
-    coords refV = autonomous.getRefVel(CON.getButtonState()); // 各目標点に対する位置決め動作を生成
+    refV = autonomous.getRefVel(CON.getButtonState()); // 各目標点に対する位置決め動作を生成
     platform.VelocityControl(refV); // 目標速度に応じて，プラットフォームを制御
     // <<<<
 
@@ -306,6 +318,14 @@ void loop()
     // シリアル出力する
     Serial.print(CON.getButtonState(),BIN);
     Serial.print(" ");
+    Serial.print(CON.readJoyLXbyte());
+    Serial.print(" ");
+    Serial.print(CON.readJoyLYbyte());
+    Serial.print(" ");
+    Serial.print(CON.readJoyRXbyte());
+    Serial.print(" ");
+    Serial.print(CON.readJoyRYbyte());
+    Serial.print(" ");
     Serial.print(refV.x);
     Serial.print(" ");
     Serial.print(refV.y);
@@ -326,7 +346,7 @@ void loop()
     /*myLCD.write_double(gPosi.x, LINE_2, 3);
     myLCD.write_double(gPosi.y, LINE_2, 12);
     myLCD.write_double(gPosi.z, LINE_3, 6);*/
-
+    send_state();
     
     flag_100ms = false;
   }
