@@ -6,10 +6,10 @@
 
 #define ENC_INIT_VAL 0x7FFF
 
-class phaseCounter
+class PhaseCounter
 {
 public:
-    phaseCounter(int);
+    PhaseCounter(int);
     int getCount();
     void setCount(int ch, int num);
     void init();

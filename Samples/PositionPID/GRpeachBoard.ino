@@ -28,6 +28,7 @@ Platform platform(1, 1, -1, -1); // 括弧内の引数で回転方向を変え�
 
 //AMT203V amt203(&SPI, PIN_CSB);
 lpms_me1 lpms(&SERIAL_LPMSME1);
+myLCDclass myLCD(&SERIAL_LCD);
 mySDclass mySD;
 bool SDwrite = false; // trueでSDカードに書き出し
 
@@ -48,14 +49,6 @@ Controller CON;
 coords gPosi = {0.0, 0.0, 0.0};
 
 unsigned int ButtonState = 0, LJoyX = 127, LJoyY = 127, RJoyX = 127, RJoyY = 127; // コントローラデータ格納用
-
-unsigned int robotState = 0; // ロボットの状態
-#define STATE_LPMS_ENABLE 0x01
-#define STATE_SD_INIT     0x02
-#define STATE_SD_WRITE    0x04
-#define STATE_READY       0x08
-#define STATE_AUTO        0x10
-#define STATE_MANUAL      0x20
 
 bool flag_10ms = false; // loop関数で10msごとにシリアルプリントできるようにするフラグ
 bool flag_100ms = false;
@@ -132,66 +125,16 @@ void error_stop(){
   }
 }
 
-void send_state(){
-  uint8_t checksum = 0;
-  char sendStr[25] = {0};
-  int sendaData[6] = { (int)(gPosi.x * 100),  (int)(gPosi.y * 100),  (int)(gPosi.z * 100), (int)(refV.x * 100),  (int)(refV.y * 100),  (int)(refV.z * 100)};
-  bool flaxMinus[6] = {0};
-
-  for(int i = 0; i < 6; i++){
-    if(sendaData[i] < 0){
-      flagMinus[i] = true;
-      sendaData[i] = abs(sendaData);
-    }
-  }
-
-  sendStr[0] = robotState;
-  sendStr[1] = sendaData[0] & 0x3F;
-  sendStr[2] = ( sendaData[0] >> 6 ) & 0x1F;
-  if(flagMinus[0]) sendStr[2] |= 0x20;
-
-  sendStr[3] = sendaData[1] & 0x3F;
-  sendStr[4] = ( sendaData[1] >> 6 ) & 0x1F;
-  if(flagMinus[1]) sendStr[4] |= 0x20;
-  
-  sendStr[5] = sendaData[2] & 0x3F;
-  sendStr[6] = ( sendaData[2] >> 6 ) & 0x1F;
-  if(flagMinus[2]) sendStr[6] |= 0x20;
-
-  sendStr[7] = sendaData[3] & 0x3F;
-  sendStr[8] = ( sendaData[3] >> 6 ) & 0x1F;
-  if(flagMinus[3]) sendStr[8] |= 0x20;
-  
-  sendStr[9] = sendaData[4] & 0x3F;
-  sendStr[10] = ( sendaData[4] >> 6 ) & 0x1F;
-  if(flagMinus[4]) sendStr[10] |= 0x20;
-  
-  sendStr[11] = sendaData[5] & 0x3F;
-  sendStr[12] = ( sendaData[5] >> 6 ) & 0x1F;
-  if(flagMinus[5]) sendStr[12] |= 0x20;
-
-  sendStr[13] = (LJoyX * 0.247) & 0x3F;
-  sendStr[14] = (LJoyY * 0.247) & 0x3F;
-  sendStr[15] = (RJoyX * 0.247) & 0x3F;
-  sendStr[16] = (RJoyY * 0.247) & 0x3F;
-  
-  sendStr[17] = ButtonState & 0x3F;
-  sendStr[18] = (ButtonState >> 6) & 0x3F;
-  sendStr[19] = (ButtonState >> 12) & 0x3F; // ここはボタン数によって書き換える
-
-  for(int i = 0; i < 20; i++){
-    Serial2.write(sendStr[i] + 0x20);
-    checksum ^= sendStr[i];
-  }
-  Serial2.print(checksum);  
-  Serial2.print("\n");
-}
-
 void setup()
 {
+  int lcd_line_num = LINE_0;
+  bool ready_to_start = false;
+  bool setting_sequence = false;
+  String lcd_message = "";
+
   Serial.begin(115200);
   SERIAL_CON.begin(115200);
-  SERIAL_M5STACK.begin(115200);
+  SERIAL_LCD.begin(115200);
   //SERIAL_XBEE.begin(115200);
   
   pinMode(PIN_XBEERESET, OUTPUT); // XBeeのリセット
@@ -214,21 +157,25 @@ void setup()
   analogWrite(PIN_LED_RED, 0); // 消しちゃダメ，ぜったい →　LPMSのために
   analogWrite(PIN_LED_BLUE, 0);
   analogWrite(PIN_LED_GREEN, 0);
+  
+  myLCD.color_white(); // LCDの色を白に
+  myLCD.clear_display(); // LCDをクリア
 
   // LPMS-ME1の初期化
   if(lpms.init() != 1) error_stop(); // 理由はわからないが，これをやる前にLEDblinkかanalogWriteを実行していないと初期化できない
-  robotState |= STATE_LPMS_ENABLE;
   LEDblink(PIN_LED_BLUE, 2, 100);  // 初期化が終わった証拠にブリンク
   Serial.println("LPMS-ME1 init done!");
   Serial.flush();
   
-  if(mySD.init() == 0) robotState |= STATE_SD_INIT;
+  // LCDに状態などを表示
+  myLCD.write_line("AUTO MODE", LINE_1);
+  myLCD.write_line("Sensors Initialized", LINE_2);
+  
+  mySD.init();
   delay(10);
   //Serial.println("Path reading ...");
-  if(SDwrite){
-    mySD.make_logfile();
-    robotState |= STATE_SD_WRITE;
-  }
+  myLCD.write_line("SD-card initialized", LINE_3);
+  if(SDwrite) mySD.make_logfile();
 
   int actpathnum = autonomous.init(&mySD, BLUE);//←mySD.path_read(BLUE, motion->Px, motion.Py, motion.refvel, motion.refangle, motion.acc_mode, motion.acc_count, motion.dec_tbe);
   Serial.print("path num: ");
@@ -236,20 +183,18 @@ void setup()
   autonomous.gPosiInit();
   LEDblink(PIN_LED_RED, 2, 100);
   
-  robotState |= STATE_WAIT_INPUT;
+  myLCD.write_line(">> Push A Button <<", LINE_4);
   
   // コントローラの"右"ボタンが押されるまで待機
-  while(robotState & STATE_READY == 0){
+  while(!ready_to_start){
     delay(10);
     CON.update();
     if(CON.readButton(BUTTON_RIGHT) == 2){
-      robotState &= ~STATE_WAIT_INPUT;
-      robotState |= STATE_READY;
-      //ready_to_start = true;
+      ready_to_start = true;
     }
   }
 
-/*  myLCD.clear_display();
+  myLCD.clear_display();
   myLCD.write_line("# Program Started  #", LINE_1);
   myLCD.write_line("pX:      pY:", LINE_2);
   
@@ -259,7 +204,7 @@ void setup()
 
   myLCD.write_double(gPosi.x, LINE_2, 3);
   myLCD.write_double(gPosi.y, LINE_2, 12);
-  myLCD.write_double(gPosi.z, LINE_3, 6);*/
+  myLCD.write_double(gPosi.z, LINE_3, 6);
 
   enc1.init();
   enc2.init();
@@ -317,16 +262,16 @@ void loop()
     Serial.print(gPosi.y);
     Serial.print(" ");
     Serial.println(gPosi.z);
+    //SERIAL_XBEE.flush();
 
     flag_10ms = false;
   }
 
   // 100msごとにLCDを更新する
   if(flag_100ms){
-    /*myLCD.write_double(gPosi.x, LINE_2, 3);
+    myLCD.write_double(gPosi.x, LINE_2, 3);
     myLCD.write_double(gPosi.y, LINE_2, 12);
-    myLCD.write_double(gPosi.z, LINE_3, 6);*/
-
+    myLCD.write_double(gPosi.z, LINE_3, 6);
     
     flag_100ms = false;
   }

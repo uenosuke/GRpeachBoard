@@ -1,6 +1,6 @@
-#include "phaseCounterPeach.h"
+#include "PhaseCounterPeach.h"
 
-phaseCounter::phaseCounter(int xch)
+PhaseCounter::PhaseCounter(int xch)
 {
     g_ch = xch;
     ch_available = false;
@@ -8,7 +8,7 @@ phaseCounter::phaseCounter(int xch)
     encount = 0;
 }
 
-int phaseCounter::getCount(){
+int PhaseCounter::getCount(){
 	unsigned short int rawcount;
 	int diff;
 	
@@ -40,12 +40,12 @@ int phaseCounter::getCount(){
     return 0;
 }
 
-void phaseCounter::setCount(int ch, int num){
+void PhaseCounter::setCount(int ch, int num){
 	
 }
 
 
-void phaseCounter::init(){
+void PhaseCounter::init(){
 	CPG.STBCR3 &= ~0x08; //マルチファンクションタイマパルスユニット2へクロックを供給(これをしていないとレジスタを書き換えられない)
 	/***************ピンの設定***************/
 	if(g_ch == 1){

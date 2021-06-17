@@ -12,24 +12,36 @@
 #include "Button.h"
 #include "Controller.h"
 #include "LCDclass.h"
-#include "lpms_me1Peach.h"
+#include "LpmsMe1Peach.h"
 #include "ManualControl.h"
-#include "phaseCounterPeach.h"
+#include "PhaseCounterPeach.h"
 #include "Platform.h"
 #include "SDclass.h"
 #include "RoboClaw.h"
 
-phaseCounter enc1(1);
-phaseCounter enc2(2);
-
-ManualControl manualCom;
+PhaseCounter enc1(1);
+PhaseCounter enc2(2);
+ManualControl manualCon;
 AutoControl autonomous;
 Platform platform(1, 1, -1, -1); // 括弧内の引数で回転方向を変えられる
-
+Controller CON;
 //AMT203V amt203(&SPI, PIN_CSB);
-lpms_me1 lpms(&SERIAL_LPMSME1);
+LpmsMe1 lpms(&SERIAL_LPMSME1);
 mySDclass mySD;
 bool SDwrite = false; // trueでSDカードに書き出し
+
+coords gPosi = {0.0, 0.0, 0.0};
+coords gRefV = {0.0, 0.0, 0.0};
+bool flag_10ms = false; // loop関数で10msごとにシリアルプリントできるようにするフラグ
+bool flag_100ms = false;
+
+unsigned int robotState = 0; // ロボットの状態
+#define STATE_LPMS_ENABLE 0x01
+#define STATE_SD_INIT     0x02
+#define STATE_SD_WRITE    0x04
+#define STATE_READY       0x08
+#define STATE_AUTO        0x10
+#define STATE_MANUAL      0x20
 
 Button button_up(PIN_SW_UP);
 Button button_down(PIN_SW_DOWN);
@@ -41,25 +53,6 @@ Button dip1(PIN_DIP1);
 Button dip2(PIN_DIP2);
 Button dip3(PIN_DIP3);
 Button dip4(PIN_DIP4);
-
-Controller CON;
-
-// グローバル変数の設定
-coords gPosi = {0.0, 0.0, 0.0};
-coords refV = {0.0, 0.0, 0.0};
-
-//unsigned int ButtonState = 0, LJoyX = 127, LJoyY = 127, RJoyX = 127, RJoyY = 127; // コントローラデータ格納用
-
-unsigned int robotState = 0; // ロボットの状態
-#define STATE_LPMS_ENABLE 0x01
-#define STATE_SD_INIT     0x02
-#define STATE_SD_WRITE    0x04
-#define STATE_READY       0x08
-#define STATE_AUTO        0x10
-#define STATE_MANUAL      0x20
-
-bool flag_10ms = false; // loop関数で10msごとにシリアルプリントできるようにするフラグ
-bool flag_100ms = false;
 
 // 最大最小範囲に収まるようにする関数
 double min_max(double value, double minmax)
@@ -136,7 +129,7 @@ void error_stop(){
 void send_state(){
   unsigned int checksum = 0;
   char sendStr[25] = {0};
-  int sendaData[6] = { (int)(gPosi.x * 100),  (int)(gPosi.y * 100),  (int)(gPosi.z * 100), (int)(refV.x * 100),  (int)(refV.y * 100),  (int)(refV.z * 100)};
+  int sendaData[6] = { (int)(gPosi.x * 100),  (int)(gPosi.y * 100),  (int)(gPosi.z * 100), (int)(gRefV.x * 100),  (int)(gRefV.y * 100),  (int)(gRefV.z * 100)};
   bool flagMinus[6] = {0};
 
   for(int i = 0; i < 6; i++){
@@ -212,8 +205,14 @@ void setup()
   pinMode(PIN_LED_4, OUTPUT);
   pinMode(PIN_LED_ENC, OUTPUT);
   
+  pinMode(PIN_DIP1, INPUT);
+  pinMode(PIN_DIP2, INPUT);
+  pinMode(PIN_DIP3, INPUT);
+  pinMode(PIN_DIP4, INPUT);
+
   pinMode(PIN_ENC_A, INPUT);
   pinMode(PIN_ENC_B, INPUT);
+
 
   analogWrite(PIN_LED_RED, 0); // 消しちゃダメ，ぜったい →　LPMSのために
   analogWrite(PIN_LED_BLUE, 0);
@@ -234,15 +233,21 @@ void setup()
     SERIAL_M5STACK.println("!SD-card init failed!!!");
   }
   delay(10);
-  //Serial.println("Path reading ...");
+  
+  SDwrite = digitalRead(PIN_DIP1) == 0 ? true : false;
+
   if(SDwrite){
     mySD.make_logfile();
     robotState |= STATE_SD_WRITE;
+    SERIAL_M5STACK.println("!Log file created!");
   }
 
   int actpathnum = autonomous.init(&mySD, BLUE);//←mySD.path_read(BLUE, motion->Px, motion.Py, motion.refvel, motion.refangle, motion.acc_mode, motion.acc_count, motion.dec_tbe);
   Serial.print("path num: ");
   Serial.println(actpathnum + 1);
+  //SERIAL_M5STACK.print("!Path num: ");
+  //SERIAL_M5STACK.println(actpathnum + 1);
+
   autonomous.gPosiInit();
   LEDblink(PIN_LED_RED, 2, 100);
   
@@ -251,7 +256,7 @@ void setup()
   
   // コントローラの"右"ボタンが押されるまで待機
   while((robotState & STATE_READY) == 0){
-    delay(10);
+    delay(5);
     CON.update();
     if(CON.readButton(BUTTON_RIGHT) == 2){
       //robotState &= ~STATE_WAIT_INPUT;
@@ -261,22 +266,10 @@ void setup()
     }
   }
 
-/*  myLCD.clear_display();
-  myLCD.write_line("# Program Started  #", LINE_1);
-  myLCD.write_line("pX:      pY:", LINE_2);
-  
-  delay(750); 
-
-  myLCD.write_line("Angle:", LINE_3);
-
-  myLCD.write_double(gPosi.x, LINE_2, 3);
-  myLCD.write_double(gPosi.y, LINE_2, 12);
-  myLCD.write_double(gPosi.z, LINE_3, 6);*/
-
   enc1.init();
   enc2.init();
 
-  manualCom.init();
+  manualCon.init();
   platform.platformInit(gPosi);
   
   autonomous.initSettings(); // これをやっていないと足回りの指令速度生成しない
@@ -295,26 +288,11 @@ void loop()
   if(flag_10ms){
     CON.update(); // コントローラからの受信
     
-    // 位置制御させるための処理 >>>>
-    refV = autonomous.getRefVel(CON.getButtonState()); // 各目標点に対する位置決め動作を生成
-    platform.VelocityControl(refV); // 目標速度に応じて，プラットフォームを制御
+    //ユーザ編集部分 >>>>>>>>>>>>>>>>>
+    gRefV = autonomous.getRefVel(CON.getButtonState()); // 各目標点に対する位置決め動作を生成
+    platform.VelocityControl(gRefV); // 目標速度に応じて，プラットフォームを制御
     // <<<<
-
-    // SDカードにログを吐く
-    if(SDwrite){
-      String dataString = "";
-      static bool first_write = true;
-      if(first_write){
-        dataString += "gPosix,gPosiy,gPosiz,refVx,refVy,refVz";
-        mySD.write_logdata(dataString);
-        first_write = false;
-        dataString = "";
-      }
-      dataString += String(gPosi.x, 4) + "," + String(gPosi.y, 4) + "," + String(gPosi.z, 4);
-      dataString += "," + String(refV.x, 4) + "," + String(refV.y, 4) + "," + String(refV.z, 4);
-
-      mySD.write_logdata(dataString);
-    }
+    
     // シリアル出力する
     Serial.print(CON.getButtonState(),BIN);
     Serial.print(" ");
@@ -326,11 +304,11 @@ void loop()
     Serial.print(" ");
     Serial.print(CON.readJoyRYbyte());
     Serial.print(" ");
-    Serial.print(refV.x);
+    Serial.print(gRefV.x);
     Serial.print(" ");
-    Serial.print(refV.y);
+    Serial.print(gRefV.y);
     Serial.print(" ");
-    Serial.print(refV.z);
+    Serial.print(gRefV.z);
     Serial.print(" ");
     Serial.print(gPosi.x);
     Serial.print(" ");
@@ -338,15 +316,34 @@ void loop()
     Serial.print(" ");
     Serial.println(gPosi.z);
 
+    // SDカードにログを吐く
+    if(SDwrite){ // 変数が追加されています!!!!
+      String dataString = "";
+      static bool first_write = true;
+      if(first_write){
+        dataString += "gPosix,gPosiy,gPosiz,gRefVx,gRefVy,gRefVz";
+        mySD.write_logdata(dataString);
+        first_write = false;
+        dataString = "";
+      }
+      dataString += String(gPosi.x, 4) + "," + String(gPosi.y, 4) + "," + String(gPosi.z, 4);
+      dataString += "," + String(gRefV.x, 4) + "," + String(gRefV.y, 4) + "," + String(gRefV.z, 4);
+
+      mySD.write_logdata(dataString);
+    }
+
+    //ユーザ編集部分 <<<<<<<<<<<<<<<<<
+    
     flag_10ms = false;
   }
 
   // 100msごとにLCDを更新する
   if(flag_100ms){
-    /*myLCD.write_double(gPosi.x, LINE_2, 3);
-    myLCD.write_double(gPosi.y, LINE_2, 12);
-    myLCD.write_double(gPosi.z, LINE_3, 6);*/
     send_state();
+
+    //ユーザ編集部分 >>>>>>>>>>>>>>>>>
+
+    //ユーザ編集部分 <<<<<<<<<<<<<<<<<
     
     flag_100ms = false;
   }
