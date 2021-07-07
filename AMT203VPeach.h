@@ -1,5 +1,5 @@
-#ifndef _AMT203V_H_INCLUDED
-#define _AMT203V_H_INCLUDED
+#ifndef _AMT203V_H
+#define _AMT203V_H
 
 #include <SPI.h>
 
@@ -12,10 +12,12 @@ class AMT203V{
   int getEncount();
   void updateCount();
   int setZeroPos();
+  int getRawEncount();
 
   private:
+  bool init_done;
   byte CSBpin;
-  int res = 4096;
+  const int res = 4096;
   int ABSposition;  // rawdata
   int preABSposition;
   int rotation = 0;

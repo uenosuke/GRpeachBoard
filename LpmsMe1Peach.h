@@ -4,9 +4,9 @@
 #include <Arduino.h>
 #include "RZ_A1H.h"
 
-class lpms_me1{
+class LpmsMe1{
 public:
-    lpms_me1(HardwareSerial*);
+    LpmsMe1(HardwareSerial*);
     void goto_command_mode();
     void set_transmit_data();
     void set_filter_mode();

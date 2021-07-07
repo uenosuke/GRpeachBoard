@@ -46,7 +46,6 @@ bool Controller::update(){
                 for(int i = 0; i < 9; i++) checksum += (unsigned int)(receive_data[i] - 0x20); // チェックサムの計算
                 if((checksum & 0x3F) == (receive_data[9] - 0x20)){ // チェックサムの計算が合っていた場合のみ値を格納
                     comCheck = true;
-                    
                     pre_conData.ButtonState = conData.ButtonState;
 
                     conData.ButtonState = 0, conData.LJoyX = 0, conData.LJoyY = 0, conData.RJoyX = 0, conData.RJoyY = 0;
@@ -89,7 +88,6 @@ bool Controller::update(){
                 for(int i = 0; i < 9; i++) checksum += (unsigned int)(receive_data[i] - 0x20); // チェックサムの計算
                 if((checksum & 0x3F) == (receive_data[9] - 0x20)){ // チェックサムの計算が合っていた場合のみ値を格納
                     comCheck = true;
-
                     pre_conData.ButtonState = conData.ButtonState; // 立下り，立ち上がりの検知用にも必要
 
                     conData.ButtonState = 0, conData.LJoyX = 0, conData.LJoyY = 0, conData.RJoyX = 0, conData.RJoyY = 0;
@@ -122,7 +120,7 @@ bool Controller::update(){
     }
 
 #endif
-return comCheck;
+  return comCheck;
 }
 
 void Controller::statePrint()

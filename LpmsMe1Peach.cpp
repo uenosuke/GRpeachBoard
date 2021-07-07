@@ -1,10 +1,10 @@
-#include "lpms_me1Peach.h"
+#include "LpmsMe1Peach.h"
 #include <math.h>
 
 #define PIx2 6.28318530718
 
 // コンストラクタ
-lpms_me1::lpms_me1(HardwareSerial* xserial){
+LpmsMe1::LpmsMe1(HardwareSerial* xserial){
   serial = xserial;
   anglex = 0.0;
   angley = 0.0;
@@ -18,7 +18,7 @@ lpms_me1::lpms_me1(HardwareSerial* xserial){
 }
 
 // コマンドモードへの移行
-void lpms_me1::goto_command_mode(){
+void LpmsMe1::goto_command_mode(){
   serial->write(0x3A);
   serial->write(0x01);//ID
   serial->write(0x00);
@@ -33,7 +33,7 @@ void lpms_me1::goto_command_mode(){
 }
 
 // 送信データの変更(角度データのみ)
-void lpms_me1::set_transmit_data(){
+void LpmsMe1::set_transmit_data(){
   serial->write(0x3A);
   serial->write(0x01);//ID
   serial->write(0x00);
@@ -52,7 +52,7 @@ void lpms_me1::set_transmit_data(){
 }
 
 // フィルタの変更(カルマンフィルタ)
-void lpms_me1::set_filter_mode(){
+void LpmsMe1::set_filter_mode(){
   serial->write(0x3A);
   serial->write(0x01);//ID
   serial->write(0x00);
@@ -71,7 +71,7 @@ void lpms_me1::set_filter_mode(){
 }
 
 // オフセットの設定
-void lpms_me1::set_offset(){
+void LpmsMe1::set_offset(){
   serial->write(0x3A);
   serial->write(0x01);//ID
   serial->write(0x00);
@@ -90,7 +90,7 @@ void lpms_me1::set_offset(){
 }
 
 // オフセットのリセット(よくわからないので使ってない)
-void lpms_me1::reset_orientation_offset(){
+void LpmsMe1::reset_orientation_offset(){
   serial->write(0x3A);
   serial->write(0x01);//ID
   serial->write(0x00);
@@ -105,7 +105,7 @@ void lpms_me1::reset_orientation_offset(){
 }
 
 // センサデータの送信要求
-void lpms_me1::get_sensor_data(){
+void LpmsMe1::get_sensor_data(){
   serial->write(0x3A);
   serial->write(0x01);
   serial->write(0x00);
@@ -119,7 +119,7 @@ void lpms_me1::get_sensor_data(){
   serial->write(0x0A);
 }
 
-float lpms_me1::get_z_angle(){
+float LpmsMe1::get_z_angle(){
   if(init_done){
     get_sensor_data();
     int response = recv_proc(10);
@@ -168,7 +168,7 @@ float lpms_me1::get_z_angle(){
   return 0.0; // 初期化が終わっていない場合は，0を返す
 }
 
-int lpms_me1::recv_proc(int timeout_num = 10){
+int LpmsMe1::recv_proc(int timeout_num = 10){
   int state = 0, data_counter = 0, timeout_counter = 0;
   short command = 0, data_length = 0, check_sum = 0, recv_sum = 0;
   bool recv_done = false;
@@ -268,7 +268,7 @@ int lpms_me1::recv_proc(int timeout_num = 10){
   return data_counter;
 }
 
-int lpms_me1::init(){
+int LpmsMe1::init(){
   byte trash;
   int datanum, result[4] = {0};
 

@@ -3,9 +3,7 @@
 
 #include <Arduino.h>
 #include <SD.h>
-
-#define RED 0
-#define BLUE 1
+#include "define.h"
 
 class mySDclass{
 public:

@@ -9,10 +9,15 @@ struct coords{
     double z;
 };
 
+#define RED  0
+#define BLUE 1
+
 #define SERIAL_LPMSME1  Serial1
 #define SERIAL_ROBOCLAW Serial4
 #define SERIAL_CON      Serial5
+// #define SERIAL_CON      Serial7 // XBeeからコントローラデータを受信する場合
 #define SERIAL_LCD      Serial6
+#define SERIAL_M5STACK  Serial6
 //#define SERIAL_XBEE     Serial7
 
 #define PIN_XBEERESET 66
@@ -28,8 +33,8 @@ struct coords{
 #define PIN_SW_RIGHT 31
 #define PIN_SW_DOWN  30
 
-#define PIN_SW_WHITE  29
-#define PIN_SW_YELLOW 28
+#define PIN_SW_B  29
+#define PIN_SW_A  28
 
 #define PIN_ENC_A  26
 #define PIN_ENC_B  27
