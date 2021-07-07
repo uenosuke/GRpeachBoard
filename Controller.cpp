@@ -7,7 +7,7 @@ Controller::Controller(){
     conData.RJoyX = 127, conData.RJoyY = 127, conData.LJoyX = 127, conData.LJoyY = 127;
 }
 
-void Controller::update(){
+bool Controller::update(){
   char receive_data[10];
   unsigned int loop_count=0, checksum = 0x00;
   comCheck = false;
@@ -45,6 +45,8 @@ void Controller::update(){
             if(recv_num == 10){// チェックサムは無く，9個受信したら値を格納
                 for(int i = 0; i < 9; i++) checksum += (unsigned int)(receive_data[i] - 0x20); // チェックサムの計算
                 if((checksum & 0x3F) == (receive_data[9] - 0x20)){ // チェックサムの計算が合っていた場合のみ値を格納
+                    comCheck = true;
+
                     pre_conData.ButtonState = conData.ButtonState;
 
                     conData.ButtonState = 0, conData.LJoyX = 0, conData.LJoyY = 0, conData.RJoyX = 0, conData.RJoyY = 0;
@@ -86,6 +88,8 @@ void Controller::update(){
                 checksum = 0;
                 for(int i = 0; i < 9; i++) checksum += (unsigned int)(receive_data[i] - 0x20); // チェックサムの計算
                 if((checksum & 0x3F) == (receive_data[9] - 0x20)){ // チェックサムの計算が合っていた場合のみ値を格納
+                    comCheck = true;
+                    
                     pre_conData.ButtonState = conData.ButtonState; // 立下り，立ち上がりの検知用にも必要
 
                     conData.ButtonState = 0, conData.LJoyX = 0, conData.LJoyY = 0, conData.RJoyX = 0, conData.RJoyY = 0;
@@ -117,6 +121,7 @@ void Controller::update(){
         }
     }
 #endif
+    return comCheck;
 }
 
 void Controller::statePrint()

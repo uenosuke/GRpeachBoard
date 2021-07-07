@@ -3,11 +3,7 @@
 AMT203V::AMT203V(SPIClass* xSPI, byte xCSBpin){
   CSBpin = xCSBpin;
   pSPI = xSPI;
-
-  pinMode(CSBpin, OUTPUT);
-  digitalWrite(CSBpin, HIGH);
-
-  //pSPI->begin();
+  init_done = false;
 }
 
 // SPI送信部分
@@ -22,31 +18,38 @@ int AMT203V::spi_write(int msg){
 }
 
 int AMT203V::init(){
+  pinMode(CSBpin, OUTPUT);
+  digitalWrite(CSBpin, HIGH);
+
+  int ret = getRawEncount();
+  preABSposition = ABSposition;
+  
+  if(ret == -1) return -1;
+  else init_done = true;
+  
+  return 1;
+}
+
+int AMT203V::getRawEncount(){
   int recieved;
   int recieve_count = 0;
   int error_count = 0;
-  boolean recieve_done = false;
-
-  delay(100);
+  bool recieve_done = false;
 
   while( !recieve_done ){
     spi_write(0x10);
-
     recieved = spi_write(0x00);
 
     while ( recieved != 0x10 ){
       recieved = spi_write(0x00);
       recieve_count++;
-      // 先生のプログラムでは時間が経っても0x10が返ってこなかったら-1を戻すようにしてある
 
       if( recieve_count >= 10 ){
         error_count++;
-
-        if( error_count == 3 ) return 0;
-        break;
+        if( error_count == 5 ) return -1; // 5回最初からトライして正常に受信できなかったら0を返す
+        break; // 10回以上正しい返答がなかったら最初からやり直し
       }
     }
-
     if( recieved == 0x10 ) recieve_done = true;
   }
 
@@ -54,59 +57,25 @@ int AMT203V::init(){
   temp[1] = spi_write(0x00);    // LSB
 
   spi_write(0x00);
-
-  digitalWrite(CSBpin,HIGH);  
+  digitalWrite(CSBpin,HIGH);  // 念のためここでもHIGHにしておく
 
   ABSposition = (temp[0] & 0x0F) << 8;
   ABSposition |= temp[1];
-
-  preABSposition = ABSposition;
-  encount = ABSposition;
   
   return 1;
 }
 
 int AMT203V::getEncount(){
-  int recieved;
-  int recieve_count = 0;
-  int error_count = 0;
-  boolean recieve_done = false;
-
-  while( !recieve_done ){
-    spi_write(0x10);
+  if(init_done){
+    getRawEncount();
+    updateCount();
     
-    recieved = spi_write(0x00);
-
-    while ( recieved != 0x10 ){
-      recieved = spi_write(0x00);
-      recieve_count++;
-      // 先生のプログラムでは時間が経っても0x10が返ってこなかったら-1を戻すようにしてある
-
-      if( recieve_count >= 10 ){
-        error_count++;
-
-        if( error_count == 10 ) return preABSposition;
-        break;
-      }
-    }
-
-    if( recieved == 0x10 ) recieve_done = true;
+    encount = rotation * res + ABSposition;
+    preABSposition = ABSposition;
   }
-
-  temp[0] = spi_write(0x00);    // MSB
-  temp[1] = spi_write(0x00);    // LSB
-
-  spi_write(0x00);
-
-  digitalWrite(CSBpin,HIGH);  
-
-  ABSposition = (temp[0] & 0x0F) << 8;
-  ABSposition |= temp[1];
-
-  updateCount();
-  encount = rotation * res + ABSposition;
-  
-  preABSposition = ABSposition;
+  else{
+    return -1;
+  }
   return encount;
 }
 
