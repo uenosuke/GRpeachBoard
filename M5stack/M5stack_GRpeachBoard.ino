@@ -85,7 +85,7 @@ void receivePeach()
           disp_msgs += (char)(recv_msgs[i] + 0x20);
         }
       }
-      lastCommandTick = millis() - 1000;
+      lastCommandTick = millis();
 
       recv_num = 0;
     }
@@ -141,6 +141,8 @@ void setup() {
   lcd.setColorDepth(8);
   lcd.createSprite(SPRITE_W, SPRITE_H); // 逐次更新される部分をSprashで
   lcd.setFreeFont(FF21); 
+
+  lastCommandTick = millis() - 1000;
 
   initDisplay(); // 画面の初期化
   // 画面出力関係 /////////////////////

@@ -456,13 +456,13 @@ void dispRobotState()
   }
 
   // SDカード書き込み可のときの描画
-  if ((robotState & STATE_SD_INIT) != 0)
+  if ((robotState & STATE_SD_WRITE) != 0)
   {
     M5.Lcd.fillRect(159, 0, 10, 20, TFT_YELLOW);
   }
   
   // LPMSの状態の描画
-  if ((robotState & STATE_SD_INIT) == 0)
+  if ((robotState & STATE_LPMS_ENABLE) == 0)
   {
     M5.Lcd.fillRect(172, 0, 70, 20, TFT_DARKGREY);
     M5.Lcd.setTextColor(TFT_WHITE);

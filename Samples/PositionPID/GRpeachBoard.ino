@@ -197,6 +197,8 @@ void setup()
   while((robotState & STATE_READY) == 0){
     delay(5);
     CON.update();
+    send_state();
+    
     if(CON.readButton(BUTTON_RIGHT) == 2){
       robotState |= STATE_READY;
       SERIAL_M5STACK.println("!READY TO GO !!!!!!!!!!");
